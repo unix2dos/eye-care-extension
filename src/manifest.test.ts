@@ -8,7 +8,15 @@ describe('manifest', () => {
   });
 
   it('does not expose the old page runner or MediaPipe assets anymore', () => {
-    const hasLegacyVisionResource = manifest.web_accessible_resources?.some(
+    const resources = (
+      manifest as typeof manifest & {
+        web_accessible_resources?: Array<{
+          matches?: string[];
+          resources?: string[];
+        }>;
+      }
+    ).web_accessible_resources;
+    const hasLegacyVisionResource = resources?.some(
       (entry) =>
         entry.matches?.includes('https://weread.qq.com/*') &&
         ((entry.resources?.includes('page/main.js') ?? false) ||
