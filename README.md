@@ -38,6 +38,22 @@ npm run build
 - [原理与使用说明](docs/principles-and-usage.md)
 - [手工验收清单](docs/manual-qa-checklist.md)
 
+## 插件截图
+
+真实界面截图，已做脱敏处理。
+
+### Popup
+
+![Popup Screenshot](docs/assets/popup.png)
+
+### Options
+
+![Options Screenshot](docs/assets/options.png)
+
+### 阅读页提醒浮层
+
+![Reminder Overlay Screenshot](docs/assets/reminder-overlay.png)
+
 ## 开发验证
 
 ```bash

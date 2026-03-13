@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Reminder Overlay Screenshot Fixture</title>
+    <style>
+      body {
+        margin: 0;
+        font: 18px/1.9 Georgia, "Times New Roman", serif;
+        background:
+          linear-gradient(180deg, rgba(250, 245, 237, 0.92), rgba(250, 245, 237, 0.98)),
+          linear-gradient(120deg, #f1e7d8, #fbf8f2);
+        color: #3c342b;
+      }
+
+      .page {
+        max-width: 920px;
+        margin: 0 auto;
+        padding: 72px 32px 120px;
+      }
+
+      .badge {
+        display: inline-block;
+        margin-bottom: 24px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(233, 139, 86, 0.12);
+        color: #7a4a2c;
+        font: 13px/1.2 -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      h1 {
+        margin: 0 0 22px;
+        font-size: 40px;
+        line-height: 1.2;
+      }
+
+      p {
+        margin: 0 0 22px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="badge">微信读书阅读页示意（已脱敏）</div>
+      <h1>示例阅读项目</h1>
+      <p>这是用于 README 展示的真实界面截图场景。页面内容已经过脱敏处理，只保留阅读页版式、字体节奏与提醒浮层效果。</p>
+      <p>当系统判断你连续盯屏且眨眼偏少时，会在右上角弹出轻提醒。提醒不会遮挡正文中心区域，也不会要求手动点击关闭。</p>
+      <p>视觉模式下，完成连续眨眼后提醒会自动消失；没有摄像头权限时，扩展会自动退化为定时提醒模式。</p>
+      <p>这个页面只用于截图，不包含真实书籍内容、账号信息或阅读历史。</p>
+    </div>
+    <script type="module" src="./reminder-overlay-entry.js"></script>
+  </body>
+</html>

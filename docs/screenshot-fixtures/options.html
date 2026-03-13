@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Options Screenshot Fixture</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+
+      body {
+        margin: 0;
+        font: 15px/1.6 -apple-system, BlinkMacSystemFont, sans-serif;
+        color: #1a1512;
+        background:
+          radial-gradient(circle at top right, rgba(245, 192, 118, 0.2), transparent 35%),
+          linear-gradient(180deg, #fbf4e9 0%, #fffdf8 100%);
+      }
+
+      main {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 40px 20px 56px;
+      }
+
+      .card {
+        background: rgba(255, 255, 255, 0.88);
+        border-radius: 24px;
+        padding: 24px;
+        box-shadow: 0 18px 46px rgba(113, 87, 48, 0.11);
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin: 20px 0 24px;
+      }
+
+      .metric {
+        padding: 16px;
+        border-radius: 18px;
+        background: #fff8ee;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font: inherit;
+        cursor: pointer;
+        background: #2d6a4f;
+        color: #fff;
+      }
+
+      button.secondary {
+        background: #d1495b;
+      }
+
+      .actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .trend {
+        margin-top: 28px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th, td {
+        text-align: left;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(76, 59, 34, 0.12);
+      }
+    </style>
+  </head>
+  <body>
+    <main id="app"></main>
+    <script>
+      const mockState = {
+        calibration: {
+          blinkRatePerMinute: 17.6,
+          blinkThreshold: 0.23,
+          averageOpenEar: 0.31,
+          calibratedAt: '2026-03-13T08:30:00.000Z',
+          sampleCount: 128
+        },
+        mode: 'vision',
+        stats: {
+          days: {
+            '2026-03-11': {
+              date: '2026-03-11',
+              readingTimeMs: 1320000,
+              reminderCount: 1,
+              blinkRateSampleSum: 18.5,
+              blinkRateSampleCount: 1,
+              averageBlinkRatePerMinute: 18.5,
+              lowBlinkDurationMs: 60000,
+              recoverySuccessCount: 1,
+              recoveryTimeMsSum: 7000,
+              recoverySampleCount: 1,
+              averageRecoveryTimeMs: 7000,
+              books: {
+                '示例阅读项目': {
+                  title: '示例阅读项目',
+                  readingTimeMs: 1320000,
+                  reminderCount: 1,
+                  blinkRateSampleSum: 18.5,
+                  blinkRateSampleCount: 1,
+                  averageBlinkRatePerMinute: 18.5,
+                  recoverySuccessCount: 1,
+                  recoveryTimeMsSum: 7000,
+                  recoverySampleCount: 1,
+                  averageRecoveryTimeMs: 7000
+                }
+              }
+            },
+            '2026-03-12': {
+              date: '2026-03-12',
+              readingTimeMs: 2100000,
+              reminderCount: 3,
+              blinkRateSampleSum: 49,
+              blinkRateSampleCount: 3,
+              averageBlinkRatePerMinute: 16.33,
+              lowBlinkDurationMs: 300000,
+              recoverySuccessCount: 2,
+              recoveryTimeMsSum: 18000,
+              recoverySampleCount: 2,
+              averageRecoveryTimeMs: 9000,
+              books: {
+                '示例阅读项目': {
+                  title: '示例阅读项目',
+                  readingTimeMs: 2100000,
+                  reminderCount: 3,
+                  blinkRateSampleSum: 49,
+                  blinkRateSampleCount: 3,
+                  averageBlinkRatePerMinute: 16.33,
+                  recoverySuccessCount: 2,
+                  recoveryTimeMsSum: 18000,
+                  recoverySampleCount: 2,
+                  averageRecoveryTimeMs: 9000
+                }
+              }
+            },
+            '2026-03-13': {
+              date: '2026-03-13',
+              readingTimeMs: 1680000,
+              reminderCount: 2,
+              blinkRateSampleSum: 34,
+              blinkRateSampleCount: 2,
+              averageBlinkRatePerMinute: 17,
+              lowBlinkDurationMs: 180000,
+              recoverySuccessCount: 2,
+              recoveryTimeMsSum: 15000,
+              recoverySampleCount: 2,
+              averageRecoveryTimeMs: 7500,
+              books: {
+                '示例阅读项目': {
+                  title: '示例阅读项目',
+                  readingTimeMs: 1680000,
+                  reminderCount: 2,
+                  blinkRateSampleSum: 34,
+                  blinkRateSampleCount: 2,
+                  averageBlinkRatePerMinute: 17,
+                  recoverySuccessCount: 2,
+                  recoveryTimeMsSum: 15000,
+                  recoverySampleCount: 2,
+                  averageRecoveryTimeMs: 7500
+                }
+              }
+            }
+          }
+        }
+      };
+
+      window.chrome = {
+        storage: {
+          local: {
+            get: async (key) => ({ [key]: mockState }),
+            set: async () => {}
+          }
+        }
+      };
+    </script>
+    <script type="module" src="../../dist/options/main.js"></script>
+  </body>
+</html>
