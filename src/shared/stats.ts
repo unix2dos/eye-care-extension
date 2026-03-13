@@ -1,17 +1,10 @@
-import type { BookStats, DayStats, ReminderOutcome, ReadingSample, StatsState } from './types';
+import type { BookStats, DayStats, ReadingSample, StatsState } from './types';
 
 function createBookStats(title: string): BookStats {
   return {
     title,
     readingTimeMs: 0,
-    reminderCount: 0,
-    blinkRateSampleSum: 0,
-    blinkRateSampleCount: 0,
-    averageBlinkRatePerMinute: null,
-    recoverySuccessCount: 0,
-    recoveryTimeMsSum: 0,
-    recoverySampleCount: 0,
-    averageRecoveryTimeMs: null
+    reminderCount: 0
   };
 }
 
@@ -20,14 +13,6 @@ function createDayStats(date: string): DayStats {
     date,
     readingTimeMs: 0,
     reminderCount: 0,
-    blinkRateSampleSum: 0,
-    blinkRateSampleCount: 0,
-    averageBlinkRatePerMinute: null,
-    lowBlinkDurationMs: 0,
-    recoverySuccessCount: 0,
-    recoveryTimeMsSum: 0,
-    recoverySampleCount: 0,
-    averageRecoveryTimeMs: null,
     books: {}
   };
 }
@@ -54,27 +39,6 @@ function ensureBook(day: DayStats, bookTitle: string): BookStats {
   return created;
 }
 
-function updateBlinkRateAverage(target: DayStats | BookStats, blinkRatePerMinute: number | null): void {
-  if (blinkRatePerMinute === null) {
-    return;
-  }
-
-  target.blinkRateSampleSum += blinkRatePerMinute;
-  target.blinkRateSampleCount += 1;
-  target.averageBlinkRatePerMinute = target.blinkRateSampleSum / target.blinkRateSampleCount;
-}
-
-function updateRecoveryAverage(target: DayStats | BookStats, recoveryTimeMs: number, recovered: boolean): void {
-  if (!recovered) {
-    return;
-  }
-
-  target.recoverySuccessCount += 1;
-  target.recoveryTimeMsSum += recoveryTimeMs;
-  target.recoverySampleCount += 1;
-  target.averageRecoveryTimeMs = target.recoveryTimeMsSum / target.recoverySampleCount;
-}
-
 export function createEmptyStatsState(): StatsState {
   return { days: {} };
 }
@@ -84,17 +48,10 @@ export function recordReadingSample(state: StatsState, sample: ReadingSample): v
   const book = ensureBook(day, sample.bookTitle);
 
   day.readingTimeMs += sample.readingTimeMs;
-  day.lowBlinkDurationMs += sample.lowBlinkDurationMs;
   book.readingTimeMs += sample.readingTimeMs;
-
-  updateBlinkRateAverage(day, sample.blinkRatePerMinute);
-  updateBlinkRateAverage(book, sample.blinkRatePerMinute);
 }
 
-export function recordReminderTriggered(
-  state: StatsState,
-  reminder: Pick<ReminderOutcome, 'date' | 'bookTitle'>
-): void {
+export function recordReminderTriggered(state: StatsState, reminder: { date: string; bookTitle: string }): void {
   const day = ensureDay(state, reminder.date);
   const book = ensureBook(day, reminder.bookTitle);
 
@@ -102,15 +59,46 @@ export function recordReminderTriggered(
   book.reminderCount += 1;
 }
 
-export function recordReminderRecovery(state: StatsState, outcome: ReminderOutcome): void {
-  const day = ensureDay(state, outcome.date);
-  const book = ensureBook(day, outcome.bookTitle);
+function normalizeBookStats(bookTitle: string, book: unknown): BookStats {
+  if (!book || typeof book !== 'object') {
+    return createBookStats(bookTitle);
+  }
 
-  updateRecoveryAverage(day, outcome.recoveryTimeMs, outcome.recovered);
-  updateRecoveryAverage(book, outcome.recoveryTimeMs, outcome.recovered);
+  const raw = book as Partial<BookStats>;
+
+  return {
+    title: typeof raw.title === 'string' ? raw.title : bookTitle,
+    readingTimeMs: typeof raw.readingTimeMs === 'number' ? raw.readingTimeMs : 0,
+    reminderCount: typeof raw.reminderCount === 'number' ? raw.reminderCount : 0
+  };
 }
 
-export function recordReminderOutcome(state: StatsState, outcome: ReminderOutcome): void {
-  recordReminderTriggered(state, outcome);
-  recordReminderRecovery(state, outcome);
+function normalizeDayStats(date: string, day: unknown): DayStats {
+  if (!day || typeof day !== 'object') {
+    return createDayStats(date);
+  }
+
+  const raw = day as Partial<DayStats> & { books?: Record<string, unknown> };
+  const books = Object.fromEntries(
+    Object.entries(raw.books ?? {}).map(([bookTitle, book]) => [bookTitle, normalizeBookStats(bookTitle, book)])
+  );
+
+  return {
+    date: typeof raw.date === 'string' ? raw.date : date,
+    readingTimeMs: typeof raw.readingTimeMs === 'number' ? raw.readingTimeMs : 0,
+    reminderCount: typeof raw.reminderCount === 'number' ? raw.reminderCount : 0,
+    books
+  };
+}
+
+export function normalizeStatsState(state: unknown): StatsState {
+  if (!state || typeof state !== 'object') {
+    return createEmptyStatsState();
+  }
+
+  const raw = state as { days?: Record<string, unknown> };
+
+  return {
+    days: Object.fromEntries(Object.entries(raw.days ?? {}).map(([date, day]) => [date, normalizeDayStats(date, day)]))
+  };
 }

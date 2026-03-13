@@ -9,8 +9,6 @@ const distDir = path.join(projectDir, 'dist');
 const publicDir = path.join(projectDir, 'public');
 const popupDir = path.join(projectDir, 'src', 'popup');
 const optionsDir = path.join(projectDir, 'src', 'options');
-const mediaPipeDir = path.join(projectDir, 'assets', 'mediapipe');
-const mediaPipeWasmDir = path.join(projectDir, 'node_modules', '@mediapipe', 'tasks-vision', 'wasm');
 
 await rm(distDir, { recursive: true, force: true });
 await mkdir(distDir, { recursive: true });
@@ -19,13 +17,10 @@ await mkdir(path.join(distDir, 'popup'), { recursive: true });
 await mkdir(path.join(distDir, 'options'), { recursive: true });
 await mkdir(path.join(distDir, 'content'), { recursive: true });
 await mkdir(path.join(distDir, 'background'), { recursive: true });
-await mkdir(path.join(distDir, 'assets', 'mediapipe'), { recursive: true });
 
 await Promise.all([
   cp(path.join(popupDir, 'index.html'), path.join(distDir, 'popup', 'index.html')),
-  cp(path.join(optionsDir, 'index.html'), path.join(distDir, 'options', 'index.html')),
-  cp(mediaPipeDir, path.join(distDir, 'assets', 'mediapipe'), { recursive: true }),
-  cp(mediaPipeWasmDir, path.join(distDir, 'assets', 'mediapipe', 'wasm'), { recursive: true })
+  cp(path.join(optionsDir, 'index.html'), path.join(distDir, 'options', 'index.html'))
 ]);
 
 await esbuild.build({

@@ -1,23 +1,29 @@
-import { createEmptyStatsState } from './stats';
-import type {
-  CalibrationProfile,
-  PersistedState,
-  ReminderStrategyPreset,
-  RuntimeMode,
-  StatsState,
-  StorageAreaLike
-} from './types';
+import { createEmptyStatsState, normalizeStatsState } from './stats';
+import type { PersistedState, StatsState, StorageAreaLike } from './types';
 
 export const STORAGE_KEY = 'weread-eye-care-state';
 
 function getDefaultState(): PersistedState {
   return {
-    calibration: null,
     stats: createEmptyStatsState(),
-    mode: 'vision',
-    strategyPreset: 'standard',
-    lastRuntimeIssue: 'none',
+    activeReadingTimeMs: 0,
+    isActiveReading: false,
     nextEligibleReminderAt: null
+  };
+}
+
+function normalizeState(stored: unknown): PersistedState {
+  if (!stored || typeof stored !== 'object') {
+    return getDefaultState();
+  }
+
+  const raw = stored as Partial<PersistedState>;
+
+  return {
+    stats: normalizeStatsState(raw.stats),
+    activeReadingTimeMs: typeof raw.activeReadingTimeMs === 'number' ? raw.activeReadingTimeMs : 0,
+    isActiveReading: typeof raw.isActiveReading === 'boolean' ? raw.isActiveReading : false,
+    nextEligibleReminderAt: typeof raw.nextEligibleReminderAt === 'number' ? raw.nextEligibleReminderAt : null
   };
 }
 
@@ -26,15 +32,7 @@ export class AppStorage {
 
   async loadState(): Promise<PersistedState> {
     const data = await this.storageArea.get(STORAGE_KEY);
-    const stored = data[STORAGE_KEY];
-    if (!stored || typeof stored !== 'object') {
-      return getDefaultState();
-    }
-
-    return {
-      ...getDefaultState(),
-      ...(stored as PersistedState)
-    };
+    return normalizeState(data[STORAGE_KEY]);
   }
 
   async saveState(state: PersistedState): Promise<void> {
@@ -51,40 +49,9 @@ export class AppStorage {
     await this.saveState({ ...state, stats });
   }
 
-  async loadCalibration(): Promise<CalibrationProfile | null> {
-    const state = await this.loadState();
-    return state.calibration;
-  }
-
-  async saveCalibration(calibration: CalibrationProfile | null): Promise<void> {
-    const state = await this.loadState();
-    await this.saveState({ ...state, calibration });
-  }
-
-  async setMode(mode: RuntimeMode): Promise<void> {
-    const state = await this.loadState();
-    await this.saveState({ ...state, mode });
-  }
-
-  async setStrategyPreset(strategyPreset: ReminderStrategyPreset): Promise<void> {
-    const state = await this.loadState();
-    await this.saveState({ ...state, strategyPreset });
-  }
-
-  async setRuntimeStatus(
-    status: Pick<PersistedState, 'mode' | 'lastRuntimeIssue' | 'nextEligibleReminderAt'>
-  ): Promise<void> {
+  async setRuntimeStatus(status: Partial<Pick<PersistedState, 'activeReadingTimeMs' | 'isActiveReading' | 'nextEligibleReminderAt'>>): Promise<void> {
     const state = await this.loadState();
     await this.saveState({ ...state, ...status });
-  }
-
-  async resetCalibration(): Promise<void> {
-    const state = await this.loadState();
-    await this.saveState({
-      ...state,
-      calibration: null,
-      mode: 'vision'
-    });
   }
 
   async resetState(): Promise<void> {

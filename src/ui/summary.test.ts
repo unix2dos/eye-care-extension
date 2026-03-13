@@ -1,78 +1,74 @@
 import { buildReminderStatusSummary, buildStatsSummary } from './summary';
-import { createEmptyStatsState, recordReadingSample, recordReminderRecovery, recordReminderTriggered } from '../shared/stats';
+import { createEmptyStatsState, recordReadingSample, recordReminderTriggered } from '../shared/stats';
 import type { PersistedState } from '../shared/types';
 
 describe('buildStatsSummary', () => {
-  it('builds aggregate metrics for popup and options views', () => {
+  it('builds only the minimal reading metrics for popup and options views', () => {
     const state = createEmptyStatsState();
 
     recordReadingSample(state, {
       date: '2026-03-12',
       bookTitle: '变量',
-      readingTimeMs: 600_000,
-      blinkRatePerMinute: 16,
-      lowBlinkDurationMs: 60_000
+      readingTimeMs: 600_000
     });
     recordReadingSample(state, {
       date: '2026-03-13',
       bookTitle: '变量',
-      readingTimeMs: 300_000,
-      blinkRatePerMinute: 18,
-      lowBlinkDurationMs: 30_000
+      readingTimeMs: 300_000
     });
     recordReminderTriggered(state, {
       date: '2026-03-13',
       bookTitle: '变量'
     });
-    recordReminderRecovery(state, {
-      date: '2026-03-13',
-      bookTitle: '变量',
-      recoveryTimeMs: 8_000,
-      recovered: true
+
+    expect(buildStatsSummary(state, '2026-03-13')).toEqual({
+      todayReadingMinutes: 5,
+      todayReminderCount: 1
     });
-
-    const summary = buildStatsSummary(state, '2026-03-13');
-
-    expect(summary.todayReadingMinutes).toBe(5);
-    expect(summary.totalReadingMinutes).toBe(15);
-    expect(summary.todayReminderCount).toBe(1);
-    expect(summary.totalReminderCount).toBe(1);
-    expect(summary.recoverySuccessRate).toBe(1);
-    expect(summary.trend.length).toBe(2);
   });
 
-  it('builds runtime reminder status for the popup', () => {
-    const state: PersistedState = {
-      calibration: null,
+  it('shows the next reminder time while active reading is accumulating', () => {
+    const state = {
       stats: createEmptyStatsState(),
-      mode: 'fallback',
-      strategyPreset: 'sensitive',
-      lastRuntimeIssue: 'permission-denied',
+      activeReadingTimeMs: 10 * 60_000,
+      isActiveReading: true,
       nextEligibleReminderAt: new Date('2026-03-13T14:32:00+08:00').getTime()
-    };
+    } as PersistedState;
 
     const summary = buildReminderStatusSummary(state, new Date('2026-03-13T14:30:00+08:00').getTime());
 
-    expect(summary.modeLabel).toBe('定时提醒');
-    expect(summary.strategyLabel).toBe('敏感');
-    expect(summary.strategyDescription).toBe('更早提醒，更容易触发');
-    expect(summary.nextEligibleReminderLabel).toBe('14:32');
-    expect(summary.runtimeIssueSummary).toBe('摄像头权限被拒绝，当前为定时提醒');
+    expect(summary).toEqual({
+      readingStatusLabel: '正在累计阅读',
+      nextEligibleReminderLabel: '14:32'
+    });
   });
 
-  it('shows ready now when the cooldown has expired', () => {
-    const state: PersistedState = {
-      calibration: null,
+  it('shows waiting to start reading when the session is inactive', () => {
+    const state = {
       stats: createEmptyStatsState(),
-      mode: 'vision',
-      strategyPreset: 'standard',
-      lastRuntimeIssue: 'none',
+      activeReadingTimeMs: 0,
+      isActiveReading: false,
       nextEligibleReminderAt: null
-    };
+    } as PersistedState;
+
+    const summary = buildReminderStatusSummary(state, new Date('2026-03-13T14:30:00+08:00').getTime());
+
+    expect(summary).toEqual({
+      readingStatusLabel: '等待开始阅读',
+      nextEligibleReminderLabel: '等待开始阅读'
+    });
+  });
+
+  it('shows ready now when the reminder is due during active reading', () => {
+    const state = {
+      stats: createEmptyStatsState(),
+      activeReadingTimeMs: 20 * 60_000,
+      isActiveReading: true,
+      nextEligibleReminderAt: null
+    } as PersistedState;
 
     const summary = buildReminderStatusSummary(state, new Date('2026-03-13T14:30:00+08:00').getTime());
 
     expect(summary.nextEligibleReminderLabel).toBe('可立即触发');
-    expect(summary.runtimeIssueSummary).toBeNull();
   });
 });

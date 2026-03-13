@@ -1,8 +1,18 @@
 import { AppStorage } from '../shared/storage';
 import { buildReminderStatusSummary, buildStatsSummary } from '../ui/summary';
+import {
+  PREVIEW_DISABLED_HINT,
+  PREVIEW_REMINDER_COMMAND,
+  buildPreviewReminderState
+} from './preview';
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+async function getActiveTab(): Promise<chrome.tabs.Tab | null> {
+  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
+  return tabs[0] ?? null;
 }
 
 async function render(): Promise<void> {
@@ -10,34 +20,45 @@ async function render(): Promise<void> {
   const state = await storage.loadState();
   const summary = buildStatsSummary(state.stats, today());
   const status = buildReminderStatusSummary(state, Date.now());
+  const activeTab = await getActiveTab();
+  const previewState = buildPreviewReminderState(activeTab);
   const app = document.getElementById('app');
 
   if (!app) {
     return;
   }
 
-  const recoveryRate =
-    summary.recoverySuccessRate === null ? '暂无' : `${Math.round(summary.recoverySuccessRate * 100)}%`;
-
   app.innerHTML = `
     <section class="panel">
       <h1>微信读书护眼</h1>
-      <div>本地护眼统计与恢复效果概览</div>
+      <div>微信读书阅读提醒</div>
       <div class="grid">
-        <div class="metric"><span>当前模式</span><strong>${status.modeLabel}</strong></div>
-        <div class="metric"><span>当前策略</span><strong>${status.strategyLabel}</strong></div>
-        <div class="metric"><span>最早下次提醒</span><strong>${status.nextEligibleReminderLabel}</strong></div>
         <div class="metric"><span>今日阅读</span><strong>${summary.todayReadingMinutes} 分钟</strong></div>
-        <div class="metric"><span>累计阅读</span><strong>${summary.totalReadingMinutes} 分钟</strong></div>
         <div class="metric"><span>今日提醒</span><strong>${summary.todayReminderCount} 次</strong></div>
-        <div class="metric"><span>累计提醒</span><strong>${summary.totalReminderCount} 次</strong></div>
+        <div class="metric"><span>阅读状态</span><strong>${previewState.enabled ? status.readingStatusLabel : '等待开始阅读'}</strong></div>
+        <div class="metric"><span>下次提醒</span><strong>${previewState.enabled ? status.nextEligibleReminderLabel : '等待开始阅读'}</strong></div>
       </div>
-      <div class="hint">策略说明：${status.strategyDescription}</div>
-      ${status.runtimeIssueSummary ? `<div class="hint">当前状态：${status.runtimeIssueSummary}</div>` : ''}
-      <div class="hint">提醒后恢复成功率：${recoveryRate}</div>
-      <div class="hint">更多明细与导出请打开扩展选项页。</div>
+      <div style="margin-top: 14px;">
+        <button id="preview-reminder" ${previewState.enabled ? '' : 'disabled'}>预览提醒</button>
+      </div>
+      <div class="hint">${previewState.hint ?? '在当前阅读页直接预览真实提醒效果。'}</div>
+      <div class="hint">默认会用语音提醒你休息一下。</div>
     </section>
   `;
+
+  document.getElementById('preview-reminder')?.addEventListener('click', async () => {
+    if (!previewState.enabled || previewState.tabId === null) {
+      return;
+    }
+
+    try {
+      await chrome.tabs.sendMessage(previewState.tabId, {
+        type: PREVIEW_REMINDER_COMMAND
+      });
+    } catch {
+      // Keep the popup usable even if the target page was reloaded or unsupported.
+    }
+  });
 }
 
 void render();
