@@ -1,5 +1,8 @@
 import { AppStorage } from '../shared/storage';
+import { exportBookStatsCsv } from '../shared/csv';
+import { buildExportFilename, downloadCsv } from './export';
 import { buildOptionsViewModel } from './view-model';
+
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
@@ -25,11 +28,20 @@ async function render(): Promise<void> {
         <div class="metric"><div>下次提醒</div><strong>${viewModel.nextReminderLabel}</strong></div>
       </div>
       <div class="actions">
+        <button id="export">导出 CSV</button>
         <button id="reset" class="secondary">清空本地统计</button>
       </div>
       <p>当你在微信读书页面持续活跃阅读累计 20 分钟时，扩展会弹出提醒并播报语音。</p>
+      <p>导出文件只包含当前无摄像头版本仍然真实存在的数据：日期、书名、阅读分钟数、提醒次数。</p>
     </section>
   `;
+
+  document.getElementById('export')?.addEventListener('click', async () => {
+    const latest = await storage.loadState();
+    const csv = exportBookStatsCsv(latest.stats);
+
+    downloadCsv(buildExportFilename(today()), csv);
+  });
 
   document.getElementById('reset')?.addEventListener('click', async () => {
     await storage.resetState();
