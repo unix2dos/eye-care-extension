@@ -1,6 +1,6 @@
 import { exportBookStatsCsv } from '../shared/csv';
 import { AppStorage } from '../shared/storage';
-import { buildStatsSummary } from '../ui/summary';
+import { buildOptionsViewModel } from './view-model';
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -19,7 +19,7 @@ function downloadCsv(filename: string, content: string): void {
 async function render(): Promise<void> {
   const storage = new AppStorage();
   const state = await storage.loadState();
-  const summary = buildStatsSummary(state.stats, today());
+  const viewModel = buildOptionsViewModel(state, today());
   const app = document.getElementById('app');
 
   if (!app) {
@@ -27,20 +27,24 @@ async function render(): Promise<void> {
   }
 
   const recoveryRate =
-    summary.recoverySuccessRate === null ? '暂无' : `${Math.round(summary.recoverySuccessRate * 100)}%`;
+    viewModel.summary.recoverySuccessRate === null ? '暂无' : `${Math.round(viewModel.summary.recoverySuccessRate * 100)}%`;
 
   app.innerHTML = `
     <section class="card">
       <h1>微信读书护眼扩展</h1>
       <p>统计仅保存在当前 Chrome 本地，不上传原始画面或阅读记录。</p>
       <div class="metrics">
-        <div class="metric"><div>今日阅读</div><strong>${summary.todayReadingMinutes} 分钟</strong></div>
-        <div class="metric"><div>累计阅读</div><strong>${summary.totalReadingMinutes} 分钟</strong></div>
-        <div class="metric"><div>今日提醒</div><strong>${summary.todayReminderCount} 次</strong></div>
+        <div class="metric"><div>当前模式</div><strong>${viewModel.modeLabel}</strong></div>
+        <div class="metric"><div>最近校准</div><strong>${viewModel.calibrationLabel}</strong></div>
+        <div class="metric"><div>校准采样</div><strong>${viewModel.calibrationSamplesLabel}</strong></div>
+        <div class="metric"><div>今日阅读</div><strong>${viewModel.summary.todayReadingMinutes} 分钟</strong></div>
+        <div class="metric"><div>累计阅读</div><strong>${viewModel.summary.totalReadingMinutes} 分钟</strong></div>
+        <div class="metric"><div>今日提醒</div><strong>${viewModel.summary.todayReminderCount} 次</strong></div>
         <div class="metric"><div>恢复成功率</div><strong>${recoveryRate}</strong></div>
       </div>
       <div class="actions">
         <button id="export">导出按书统计 CSV</button>
+        <button id="recalibrate">重新校准</button>
         <button id="reset" class="secondary">清空本地统计</button>
       </div>
       <section class="trend">
@@ -55,7 +59,7 @@ async function render(): Promise<void> {
             </tr>
           </thead>
           <tbody>
-            ${summary.trend
+            ${viewModel.summary.trend
               .map(
                 (point) => `
                   <tr>
@@ -75,6 +79,11 @@ async function render(): Promise<void> {
 
   document.getElementById('export')?.addEventListener('click', () => {
     downloadCsv(`weread-eye-care-${today()}.csv`, exportBookStatsCsv(state.stats));
+  });
+
+  document.getElementById('recalibrate')?.addEventListener('click', async () => {
+    await storage.resetCalibration();
+    await render();
   });
 
   document.getElementById('reset')?.addEventListener('click', async () => {

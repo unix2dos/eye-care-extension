@@ -56,6 +56,15 @@ export class AppStorage {
     await this.saveState({ ...state, mode });
   }
 
+  async resetCalibration(): Promise<void> {
+    const state = await this.loadState();
+    await this.saveState({
+      ...state,
+      calibration: null,
+      mode: 'vision'
+    });
+  }
+
   async resetState(): Promise<void> {
     await this.saveState(getDefaultState());
   }
