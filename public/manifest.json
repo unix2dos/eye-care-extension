@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "WeRead Eye Care",
+  "version": "0.1.0",
+  "description": "Blink and rest reminders for WeRead.",
+  "permissions": ["storage"],
+  "host_permissions": ["https://weread.qq.com/*"],
+  "background": {
+    "service_worker": "background/main.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://weread.qq.com/web/reader/*"],
+      "js": ["content/main.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "assets/mediapipe/models/face_landmarker.task",
+        "assets/mediapipe/wasm/*"
+      ],
+      "matches": ["https://weread.qq.com/*"]
+    }
+  ],
+  "action": {
+    "default_title": "WeRead Eye Care",
+    "default_popup": "popup/index.html"
+  },
+  "options_page": "options/index.html"
+}
