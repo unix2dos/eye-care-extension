@@ -1,4 +1,5 @@
 export const DEFAULT_REMINDER_SPEECH = '请休息一下，眨眼几次，再看远处十秒。';
+export const PREFERRED_MAINLAND_VOICE_NAME = 'Eddy (中文（中国大陆）)';
 
 interface ReminderSpeechDeps {
   synthesis?: SpeechSynthesis | null;
@@ -6,45 +7,83 @@ interface ReminderSpeechDeps {
   voicesChangedTimeoutMs?: number;
 }
 
-const MANDARIN_NAME_PATTERN = /(mandarin|普通话|putonghua|tingting|xiaoxiao|xiaoyi|yunxi|yunyang|zh-cn)/i;
+export type ReminderSpeechSelectionKind =
+  | 'preferred-exact'
+  | 'mainland-fallback'
+  | 'no-selected-voice'
+  | 'synthesis-unavailable'
+  | 'speak-failed';
 
-function scoreChineseVoice(voice: SpeechSynthesisVoice): number {
+export interface ReminderSpeechDebugInfo {
+  preferredVoiceName: string;
+  selectedVoiceName: string | null;
+  selectedVoiceLang: string | null;
+  fallbackUsed: boolean;
+  selectionKind: ReminderSpeechSelectionKind;
+  errorMessage: string | null;
+}
+
+function normalizeVoiceName(name: string): string {
+  return name.replace(/\s+/g, '').toLowerCase();
+}
+
+function isPreferredEddyVoice(voice: SpeechSynthesisVoice): boolean {
+  const normalizedName = normalizeVoiceName(voice.name);
+  const lang = voice.lang.toLowerCase();
+
+  return normalizedName.includes('eddy') && (lang.startsWith('zh-cn') || lang === 'zh-cn' || voice.name.includes('中国大陆'));
+}
+
+function isMainlandMandarinVoice(voice: SpeechSynthesisVoice): boolean {
   const lang = voice.lang.toLowerCase();
   const name = voice.name.toLowerCase();
 
-  if (lang === 'zh-cn' || lang === 'cmn-cn') {
-    return 500;
+  if (lang === 'zh-cn' || lang === 'cmn-cn' || lang.startsWith('zh-cn') || lang.startsWith('cmn-cn')) {
+    return true;
   }
 
-  if (lang.startsWith('zh-cn') || lang.startsWith('cmn-cn')) {
-    return 450;
+  if (name.includes('中国大陆')) {
+    return true;
   }
 
-  if (MANDARIN_NAME_PATTERN.test(name)) {
-    return 400;
-  }
-
-  if (lang.startsWith('cmn')) {
-    return 300;
-  }
-
-  if (lang.startsWith('zh')) {
-    return 200;
-  }
-
-  return 0;
+  return false;
 }
 
-function pickPreferredChineseVoice(voices: SpeechSynthesisVoice[]): SpeechSynthesisVoice | null {
-  return (
-    voices
-      .map((voice) => ({
-        voice,
-        score: scoreChineseVoice(voice) + (voice.localService ? 5 : 0) + (voice.default ? 1 : 0)
-      }))
-      .filter((entry) => entry.score > 0)
-      .sort((left, right) => right.score - left.score)[0]?.voice ?? null
-  );
+function pickPreferredChineseVoice(
+  voices: SpeechSynthesisVoice[]
+): Pick<ReminderSpeechDebugInfo, 'selectedVoiceName' | 'selectedVoiceLang' | 'fallbackUsed' | 'selectionKind'> & {
+  voice: SpeechSynthesisVoice | null;
+} {
+  const exactPreferred = voices.find(isPreferredEddyVoice);
+
+  if (exactPreferred) {
+    return {
+      voice: exactPreferred,
+      selectedVoiceName: exactPreferred.name,
+      selectedVoiceLang: exactPreferred.lang,
+      fallbackUsed: false,
+      selectionKind: 'preferred-exact'
+    };
+  }
+
+  const mainlandFallback = voices.find(isMainlandMandarinVoice);
+  if (mainlandFallback) {
+    return {
+      voice: mainlandFallback,
+      selectedVoiceName: mainlandFallback.name,
+      selectedVoiceLang: mainlandFallback.lang,
+      fallbackUsed: true,
+      selectionKind: 'mainland-fallback'
+    };
+  }
+
+  return {
+    voice: null,
+    selectedVoiceName: null,
+    selectedVoiceLang: null,
+    fallbackUsed: true,
+    selectionKind: 'no-selected-voice'
+  };
 }
 
 async function resolveVoices(synthesis: SpeechSynthesis, timeoutMs: number): Promise<SpeechSynthesisVoice[]> {
@@ -80,20 +119,48 @@ export async function speakReminderText(
     createUtterance = (value) => new SpeechSynthesisUtterance(value),
     voicesChangedTimeoutMs = 300
   }: ReminderSpeechDeps = {}
-): Promise<void> {
+): Promise<ReminderSpeechDebugInfo> {
   if (!synthesis) {
-    return;
+    return {
+      preferredVoiceName: PREFERRED_MAINLAND_VOICE_NAME,
+      selectedVoiceName: null,
+      selectedVoiceLang: null,
+      fallbackUsed: true,
+      selectionKind: 'synthesis-unavailable',
+      errorMessage: null
+    };
   }
 
   const utterance = createUtterance(text);
   const voices = await resolveVoices(synthesis, voicesChangedTimeoutMs);
-  const preferredVoice = pickPreferredChineseVoice(voices);
+  const selection = pickPreferredChineseVoice(voices);
 
-  utterance.lang = preferredVoice?.lang ?? 'zh-CN';
-  if (preferredVoice) {
-    utterance.voice = preferredVoice;
+  utterance.lang = selection.selectedVoiceLang ?? 'zh-CN';
+  if (selection.voice) {
+    utterance.voice = selection.voice;
   }
   utterance.rate = 1;
-  synthesis.cancel();
-  synthesis.speak(utterance);
+
+  try {
+    synthesis.cancel();
+    synthesis.speak(utterance);
+
+    return {
+      preferredVoiceName: PREFERRED_MAINLAND_VOICE_NAME,
+      selectedVoiceName: selection.selectedVoiceName,
+      selectedVoiceLang: selection.selectedVoiceLang,
+      fallbackUsed: selection.fallbackUsed,
+      selectionKind: selection.selectionKind,
+      errorMessage: null
+    };
+  } catch (error) {
+    return {
+      preferredVoiceName: PREFERRED_MAINLAND_VOICE_NAME,
+      selectedVoiceName: selection.selectedVoiceName,
+      selectedVoiceLang: selection.selectedVoiceLang,
+      fallbackUsed: selection.fallbackUsed,
+      selectionKind: 'speak-failed',
+      errorMessage: error instanceof Error ? error.message : String(error)
+    };
+  }
 }

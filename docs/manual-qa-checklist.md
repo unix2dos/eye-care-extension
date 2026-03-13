@@ -53,9 +53,11 @@ npm run build
 
 验收标准：
 
-- 当前阅读页右上角出现提醒浮层
+- 当前阅读页出现全屏提醒遮罩
+- 底层页面不能继续点击或滚动
 - 会尝试播报 `TTS`
-- 预览会自动消失
+- 预览不会自动消失
+- 必须点击 `我知道了` 才会关闭
 - 今日提醒次数不增加
 - 下次提醒时间不变化
 
@@ -91,7 +93,8 @@ npm run build
 
 验收标准：
 
-- 页面右上角出现提醒浮层
+- 页面出现全屏提醒遮罩
+- 底层页面不能继续点击或滚动
 - 语音文案为：`请休息一下，眨眼几次，再看远处十秒。`
 - 提醒出现后，下一轮累计重新开始
 - popup 中的今日提醒次数加 `1`
@@ -116,11 +119,31 @@ npm run build
 
 验收标准：
 
-- 页面浮层仍会出现
+- 页面全屏提醒仍会出现
 - 不会自动退回到普通提示音
 - 扩展不会因为 TTS 失败而报错或停止计时
 
-## 10. Options 状态页
+## 10. TTS Voice 选择
+
+1. 打开微信读书阅读页
+2. 点击 `预览提醒`
+3. 在页面 DevTools Console 中检查：
+
+```js
+document.documentElement.dataset.wereadEyeCarePreferredVoiceName
+document.documentElement.dataset.wereadEyeCareSelectedVoiceName
+document.documentElement.dataset.wereadEyeCareSelectedVoiceLang
+document.documentElement.dataset.wereadEyeCareVoiceSelectionKind
+document.documentElement.dataset.wereadEyeCareVoiceFallbackUsed
+```
+
+验收标准：
+
+- 首选 voice 为 `Eddy（中文·中国大陆）`
+- 如果浏览器里存在这个 voice，`SelectedVoiceName` 应对应 `Eddy`
+- 如果它不存在，`SelectedVoiceLang` 仍应是 `zh-CN`
+- `SelectionKind` 应能区分是首选命中还是 fallback
+## 11. Options 状态页
 
 1. 打开扩展选项页
 
@@ -139,7 +162,7 @@ npm run build
   - 校准
   - 策略切换
 
-## 11. 清空数据
+## 12. 清空数据
 
 1. 在扩展选项页点击 `清空本地统计`
 2. 返回 popup 再查看状态
@@ -151,7 +174,7 @@ npm run build
 - 当前累计状态清零
 - 重新开始阅读后，从新的累计周期开始
 
-## 12. CSV 导出
+## 13. CSV 导出
 
 1. 在扩展选项页点击 `导出 CSV`
 2. 打开下载得到的文件
@@ -167,11 +190,11 @@ npm run build
   - `reminderCount`
 - 不包含摄像头、眨眼率或恢复效果相关字段
 
-## 13. 回归关注点
+## 14. 回归关注点
 
 重点观察这些风险：
 
 - popup 的下次提醒时间是否和实际累计节奏一致
 - 页面隐藏或切标签页后是否真的暂停
 - 预览提醒是否误计入真实提醒次数
-- TTS 在你的 Chrome 环境里是否稳定播报
+- TTS 在你的 Chrome 环境里是否稳定播报普通话

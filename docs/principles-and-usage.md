@@ -38,7 +38,7 @@ V1 只支持：
    按累计的活跃阅读时间触发提醒，当前默认是每 `20 分钟` 一次。
 
 4. `提醒展示`
-   在页面里显示浮层，并使用浏览器 `TTS` 播报固定文案。
+   在页面里显示全屏遮罩，并使用浏览器 `TTS` 播报固定文案。
 
 ### 2.2 什么叫“活跃阅读”
 
@@ -79,22 +79,34 @@ V1 只支持：
 
 提醒触发后会发生两件事：
 
-1. 微信读书页面右上角出现提醒浮层
+1. 微信读书页面出现全屏提醒遮罩
 2. 浏览器用 `TTS` 播报固定文案
 
 当前默认文案是：
 
 `请休息一下，眨眼几次，再看远处十秒。`
 
-提醒浮层会在短时间后自动消失，不需要点按钮关闭。
+这个遮罩会阻止底层页面继续交互。
+
+你必须手动点击：
+
+- `我知道了`
+
+提醒才会关闭。
 
 ### 2.5 如果 TTS 失败怎么办
 
 当前版本把 `TTS` 当作默认提醒方式。
 
+语音选择策略是：
+
+- 优先使用 `Eddy（中文·中国大陆）`
+- 如果当前浏览器里没有它，再退回到其他 `大陆普通话 voice`
+- 不主动优先使用 `zh-TW` 或 `zh-HK` voice
+
 如果浏览器当前不能正常播报语音：
 
-- 页面浮层仍然会出现
+- 页面全屏提醒仍然会出现
 - 不会自动退回到普通提示音
 - 下一轮提醒计时不受影响
 
@@ -130,9 +142,10 @@ V1 只支持：
 当前实现里：
 
 - 当活动标签页是微信读书阅读页时，`popup` 会启用 `预览提醒`
-- 点击后，会在当前阅读页里弹出真实提醒浮层
+- 点击后，会在当前阅读页里弹出真实提醒遮罩
 - 同时会走当前默认提醒方式，也就是 `TTS`
 - 预览不会计入提醒次数，也不会改变下次提醒时间
+- 预览也必须手动点击 `我知道了` 才会关闭
 
 如果当前活动标签页不是微信读书阅读页，按钮会置灰，并显示：
 
@@ -236,8 +249,6 @@ npm run build
 - 活跃阅读超时：`3 分钟`
 - 统计采样间隔：`5 秒`
 - 提醒间隔：`20 分钟`
-- 提醒浮层自动消失时间：`10 秒`
-- 预览提醒可见时间：`2.5 秒`
 
 ## 7. 你需要知道的限制
 
@@ -277,9 +288,24 @@ npm run build
 当前实现下：
 
 - 不会自动改成提示音
-- 仍然会显示浮层
+- 仍然会显示全屏提醒
 
 优先检查浏览器对语音播报的支持情况，再重试。
+
+### 8.4 如何确认当前实际使用了哪个 voice
+
+每次语音播报后，扩展都会把当前选择结果写到页面根节点的 `dataset` 里，方便手工验收。
+
+你可以在微信读书页面的 DevTools Console 里查看：
+
+```js
+document.documentElement.dataset.wereadEyeCareSelectedVoiceName
+document.documentElement.dataset.wereadEyeCareSelectedVoiceLang
+document.documentElement.dataset.wereadEyeCareVoiceSelectionKind
+document.documentElement.dataset.wereadEyeCareVoiceFallbackUsed
+```
+
+如果发生了从 `Eddy（中文·中国大陆）` 到其他大陆普通话 voice 的降级，这里也会直接反映出来。
 
 ## 9. 代码入口
 
@@ -289,6 +315,7 @@ npm run build
 - 活跃阅读态：`src/content/activity/session.ts`
 - 提醒调度：`src/content/runtime/scheduler.ts`
 - TTS 提醒：`src/content/reminder/tts.ts`
+- 全屏提醒遮罩：`src/content/reminder/overlay.ts`
 - 微信读书适配：`src/content/weread/adapter.ts`
 - 本地统计与存储：`src/shared/stats.ts` 和 `src/shared/storage.ts`
 - popup：`src/popup/main.ts`

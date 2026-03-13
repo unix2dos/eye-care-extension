@@ -3,51 +3,38 @@ import { describe, expect, it, vi } from 'vitest';
 import { PREVIEW_REMINDER_MESSAGE, createPreviewReminderRunner } from './preview';
 
 describe('createPreviewReminderRunner', () => {
-  it('shows the real reminder copy and speaks the reminder text', async () => {
+  it('shows the real reminder copy, speaks it, and waits for manual dismissal', async () => {
+    let resolveDismiss: (() => void) | null = null;
     const overlay = {
-      show: vi.fn(),
-      hide: vi.fn()
+      show: vi.fn(
+        () =>
+          new Promise<void>((resolve) => {
+            resolveDismiss = resolve;
+          })
+      )
     };
     const speakReminder = vi.fn().mockResolvedValue(undefined);
-    const timers: Array<() => void> = [];
 
     const previewReminder = createPreviewReminderRunner({
       overlay,
-      speakReminder,
-      setTimeout: ((handler: () => void) => {
-        timers.push(handler);
-        return timers.length;
-      }) as typeof setTimeout,
-      clearTimeout: vi.fn() as unknown as typeof clearTimeout
+      speakReminder
     });
 
-    await previewReminder();
+    let completed = false;
+    const pending = previewReminder().then(() => {
+      completed = true;
+    });
 
-    expect(overlay.show).toHaveBeenCalledWith(PREVIEW_REMINDER_MESSAGE);
+    await Promise.resolve();
+
+    expect(overlay.show).toHaveBeenCalledWith(PREVIEW_REMINDER_MESSAGE, 'preview');
     expect(speakReminder).toHaveBeenCalledWith(PREVIEW_REMINDER_MESSAGE);
-    expect(overlay.hide).not.toHaveBeenCalled();
-  });
+    expect(completed).toBe(false);
 
-  it('auto-hides the preview after the timeout', async () => {
-    const overlay = {
-      show: vi.fn(),
-      hide: vi.fn()
-    };
-    const timers: Array<() => void> = [];
+    const dismiss = resolveDismiss as unknown as () => void;
+    dismiss();
+    await pending;
 
-    const previewReminder = createPreviewReminderRunner({
-      overlay,
-      speakReminder: vi.fn().mockResolvedValue(undefined),
-      setTimeout: ((handler: () => void) => {
-        timers.push(handler);
-        return timers.length;
-      }) as typeof setTimeout,
-      clearTimeout: vi.fn() as unknown as typeof clearTimeout
-    });
-
-    await previewReminder();
-    timers[0]?.();
-
-    expect(overlay.hide).toHaveBeenCalledTimes(1);
+    expect(completed).toBe(true);
   });
 });

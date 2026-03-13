@@ -55,10 +55,57 @@ describe('speakReminderText', () => {
         lang: 'zh-CN',
         default: false,
         localService: true
+      },
+      {
+        name: 'Eddy (中文（中国大陆）)',
+        lang: 'zh-CN',
+        default: false,
+        localService: true
       }
     ] as SpeechSynthesisVoice[];
 
-    await speakReminderText(DEFAULT_REMINDER_SPEECH, {
+    const debug = await speakReminderText(DEFAULT_REMINDER_SPEECH, {
+      synthesis: {
+        speak,
+        cancel,
+        getVoices: () => voices
+      } as unknown as SpeechSynthesis,
+      createUtterance: (text) => ({ text }) as SpeechSynthesisUtterance
+    });
+
+    expect(speak).toHaveBeenCalledWith(
+      expect.objectContaining({
+        voice: voices[2]
+      })
+    );
+    expect(debug).toMatchObject({
+      preferredVoiceName: 'Eddy (中文（中国大陆）)',
+      selectedVoiceName: 'Eddy (中文（中国大陆）)',
+      selectedVoiceLang: 'zh-CN',
+      fallbackUsed: false,
+      selectionKind: 'preferred-exact'
+    });
+  });
+
+  it('falls back to another mainland mandarin voice when Eddy is unavailable', async () => {
+    const speak = vi.fn();
+    const cancel = vi.fn();
+    const voices = [
+      {
+        name: '善怡',
+        lang: 'zh-HK',
+        default: false,
+        localService: true
+      },
+      {
+        name: '语舒',
+        lang: 'zh-CN',
+        default: false,
+        localService: true
+      }
+    ] as SpeechSynthesisVoice[];
+
+    const debug = await speakReminderText(DEFAULT_REMINDER_SPEECH, {
       synthesis: {
         speak,
         cancel,
@@ -72,6 +119,13 @@ describe('speakReminderText', () => {
         voice: voices[1]
       })
     );
+    expect(debug).toMatchObject({
+      preferredVoiceName: 'Eddy (中文（中国大陆）)',
+      selectedVoiceName: '语舒',
+      selectedVoiceLang: 'zh-CN',
+      fallbackUsed: true,
+      selectionKind: 'mainland-fallback'
+    });
   });
 
   it('does not throw when speech synthesis is unavailable', async () => {
@@ -80,6 +134,9 @@ describe('speakReminderText', () => {
         synthesis: null,
         createUtterance: (text) => ({ text }) as SpeechSynthesisUtterance
       })
-    ).resolves.toBeUndefined();
+    ).resolves.toMatchObject({
+      selectedVoiceName: null,
+      selectionKind: 'synthesis-unavailable'
+    });
   });
 });

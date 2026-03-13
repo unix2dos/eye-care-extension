@@ -5,12 +5,11 @@ import type { PersistedState, StatsState } from '../shared/types';
 import { ActiveReadingSession } from './activity/session';
 import { createPreviewReminderRunner } from './preview';
 import { ReminderOverlay } from './reminder/overlay';
-import { DEFAULT_REMINDER_SPEECH, speakReminderText } from './reminder/tts';
+import { DEFAULT_REMINDER_SPEECH, type ReminderSpeechDebugInfo, speakReminderText } from './reminder/tts';
 import { ActiveReadingReminderScheduler } from './runtime/scheduler';
 import { getWeReadBookTitle, isSupportedWeReadUrl } from './weread/adapter';
 
 const STATS_SAMPLE_INTERVAL_MS = 5_000;
-const REMINDER_VISIBLE_MS = 10_000;
 
 function getTodayDate(): string {
   return new Date().toISOString().slice(0, 10);
@@ -37,7 +36,6 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   let nextEligibleReminderAt: number | null = persisted.nextEligibleReminderAt;
   let activeReadingTimeMs = persisted.activeReadingTimeMs;
   let isActiveReading = persisted.isActiveReading;
-  let reminderDismissTimer: number | null = null;
 
   const persistRuntimeStatus = async (
     nextStatus: Partial<Pick<PersistedState, 'activeReadingTimeMs' | 'isActiveReading' | 'nextEligibleReminderAt'>>
@@ -80,21 +78,25 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
     return schedule;
   };
 
-  const hideReminderLater = () => {
-    if (reminderDismissTimer !== null) {
-      win.clearTimeout(reminderDismissTimer);
-    }
+  const recordSpeechDebug = (debugInfo: ReminderSpeechDebugInfo) => {
+    doc.documentElement.dataset.wereadEyeCarePreferredVoiceName = debugInfo.preferredVoiceName;
+    doc.documentElement.dataset.wereadEyeCareSelectedVoiceName = debugInfo.selectedVoiceName ?? '';
+    doc.documentElement.dataset.wereadEyeCareSelectedVoiceLang = debugInfo.selectedVoiceLang ?? '';
+    doc.documentElement.dataset.wereadEyeCareVoiceSelectionKind = debugInfo.selectionKind;
+    doc.documentElement.dataset.wereadEyeCareVoiceFallbackUsed = String(debugInfo.fallbackUsed);
+    doc.documentElement.dataset.wereadEyeCareVoiceErrorMessage = debugInfo.errorMessage ?? '';
+  };
 
-    reminderDismissTimer = win.setTimeout(() => {
-      overlay.hide();
-      reminderDismissTimer = null;
-    }, REMINDER_VISIBLE_MS);
+  const speakReminder = async (message: string) => {
+    const debugInfo = await speakReminderText(message);
+    recordSpeechDebug(debugInfo);
+    return debugInfo;
   };
 
   const triggerReminder = async () => {
-    overlay.show(DEFAULT_REMINDER_SPEECH);
-    await speakReminderText(DEFAULT_REMINDER_SPEECH).catch(() => undefined);
-    hideReminderLater();
+    const dismissed = overlay.show(DEFAULT_REMINDER_SPEECH, 'reminder');
+    await speakReminder(DEFAULT_REMINDER_SPEECH);
+    await dismissed;
   };
 
   const markInteraction = () => {
@@ -108,7 +110,6 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   doc.addEventListener('visibilitychange', () => {
     session.setVisibility(doc.visibilityState === 'visible', Date.now());
     if (doc.visibilityState !== 'visible') {
-      overlay.hide();
       void persistRuntimeStatus({
         isActiveReading: false,
         nextEligibleReminderAt: null
@@ -118,9 +119,7 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
 
   const previewReminder = createPreviewReminderRunner({
     overlay,
-    speakReminder: speakReminderText,
-    setTimeout: win.setTimeout.bind(win),
-    clearTimeout: win.clearTimeout.bind(win)
+    speakReminder
   });
 
   chrome.runtime.onMessage.addListener((message) => {
@@ -142,10 +141,17 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   win.setInterval(() => {
     void (async () => {
       const now = Date.now();
+      if (overlay.isBlockingReminderVisible()) {
+        await persistRuntimeStatus({
+          isActiveReading: false,
+          nextEligibleReminderAt: null
+        });
+        return;
+      }
+
       const schedule = await syncSchedule(now);
 
       if (!schedule.isActive) {
-        overlay.hide();
         return;
       }
 

@@ -1,41 +1,23 @@
 import { DEFAULT_REMINDER_SPEECH } from './reminder/tts';
 
 export const PREVIEW_REMINDER_MESSAGE = DEFAULT_REMINDER_SPEECH;
-export const PREVIEW_REMINDER_VISIBLE_MS = 2_500;
 
 export interface OverlayLike {
-  show(message: string): void;
-  hide(): void;
+  show(message: string, mode: 'preview' | 'reminder'): Promise<void>;
 }
 
 export interface PreviewReminderRunnerDeps {
   overlay: OverlayLike;
-  speakReminder: (text: string) => Promise<void>;
-  setTimeout: typeof window.setTimeout;
-  clearTimeout: typeof window.clearTimeout;
-  visibleMs?: number;
+  speakReminder: (text: string) => Promise<unknown>;
 }
 
 export function createPreviewReminderRunner({
   overlay,
-  speakReminder,
-  setTimeout,
-  clearTimeout,
-  visibleMs = PREVIEW_REMINDER_VISIBLE_MS
+  speakReminder
 }: PreviewReminderRunnerDeps): () => Promise<void> {
-  let hideTimer: number | null = null;
-
   return async () => {
-    if (hideTimer !== null) {
-      clearTimeout(hideTimer);
-    }
-
-    overlay.show(PREVIEW_REMINDER_MESSAGE);
+    const dismissed = overlay.show(PREVIEW_REMINDER_MESSAGE, 'preview');
     await speakReminder(PREVIEW_REMINDER_MESSAGE).catch(() => undefined);
-
-    hideTimer = setTimeout(() => {
-      overlay.hide();
-      hideTimer = null;
-    }, visibleMs);
+    await dismissed;
   };
 }
