@@ -40,7 +40,10 @@ describe('AppStorage', () => {
         sampleCount: 120
       },
       stats,
-      mode: 'fallback'
+      mode: 'fallback',
+      strategyPreset: 'sensitive',
+      lastRuntimeIssue: 'device-unavailable',
+      nextEligibleReminderAt: 208_000
     };
 
     await storage.saveState(state);
@@ -50,6 +53,28 @@ describe('AppStorage', () => {
 
     expect(after.calibration).toBeNull();
     expect(after.mode).toBe('vision');
+    expect(after.strategyPreset).toBe('sensitive');
+    expect(after.lastRuntimeIssue).toBe('device-unavailable');
+    expect(after.nextEligibleReminderAt).toBe(208_000);
     expect(after.stats.days['2026-03-13']?.readingTimeMs).toBe(120_000);
+  });
+
+  it('fills in defaults for strategy and runtime issue when loading older stored records', async () => {
+    const storageArea = new MemoryStorageArea();
+    const storage = new AppStorage(storageArea);
+
+    await storageArea.set({
+      'weread-eye-care-state': {
+        calibration: null,
+        stats: createEmptyStatsState(),
+        mode: 'vision'
+      }
+    });
+
+    const state = await storage.loadState();
+
+    expect(state.strategyPreset).toBe('standard');
+    expect(state.lastRuntimeIssue).toBe('none');
+    expect(state.nextEligibleReminderAt).toBeNull();
   });
 });

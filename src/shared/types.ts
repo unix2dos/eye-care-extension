@@ -86,11 +86,22 @@ export interface CalibrationProfile {
 }
 
 export type RuntimeMode = 'vision' | 'fallback';
+export type ReminderStrategyPreset = 'conservative' | 'standard' | 'sensitive';
+export type RuntimeIssueCode =
+  | 'none'
+  | 'permission-denied'
+  | 'browser-unsupported'
+  | 'device-unavailable'
+  | 'vision-load-failed'
+  | 'calibration-failed';
 
 export interface PersistedState {
   calibration: CalibrationProfile | null;
   stats: StatsState;
   mode: RuntimeMode;
+  strategyPreset: ReminderStrategyPreset;
+  lastRuntimeIssue: RuntimeIssueCode;
+  nextEligibleReminderAt: number | null;
 }
 
 export interface StorageAreaLike {

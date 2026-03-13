@@ -3,6 +3,7 @@ import type { CalibrationProfile } from '../../shared/types';
 import { BlinkDetector, calculateAverageFaceEar } from './ear';
 import type { VisionObservation } from '../runtime/controller';
 import { getVisionAssetUrls } from './assets';
+import { RuntimeStartupError, classifyRuntimeIssue } from '../runtime/issues';
 
 export class MediaPipeVisionService {
   private landmarker: FaceLandmarker | null = null;
@@ -13,33 +14,52 @@ export class MediaPipeVisionService {
 
   async start(calibration: CalibrationProfile | null = null): Promise<void> {
     if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error('Camera API unavailable');
+      throw new RuntimeStartupError('browser-unsupported', 'Camera API unavailable');
     }
 
     const assetUrls = getVisionAssetUrls();
-    const vision = await FilesetResolver.forVisionTasks(assetUrls.wasmBaseUrl);
-    this.landmarker = await FaceLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: assetUrls.modelAssetUrl,
-        delegate: 'CPU'
-      },
-      runningMode: 'VIDEO',
-      numFaces: 1
-    });
+    try {
+      const vision = await FilesetResolver.forVisionTasks(assetUrls.wasmBaseUrl);
+      this.landmarker = await FaceLandmarker.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: assetUrls.modelAssetUrl,
+          delegate: 'CPU'
+        },
+        runningMode: 'VIDEO',
+        numFaces: 1
+      });
+    } catch (error) {
+      throw new RuntimeStartupError('vision-load-failed', error instanceof Error ? error.message : 'Vision load failed');
+    }
 
-    this.stream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: 'user',
-        width: { ideal: 640 },
-        height: { ideal: 480 }
-      }
-    });
+    try {
+      this.stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: 'user',
+          width: { ideal: 640 },
+          height: { ideal: 480 }
+        }
+      });
+    } catch (error) {
+      throw new RuntimeStartupError(
+        classifyRuntimeIssue(error),
+        error instanceof Error ? error.message : 'Camera startup failed'
+      );
+    }
 
     this.video = document.createElement('video');
     this.video.playsInline = true;
     this.video.muted = true;
     this.video.srcObject = this.stream;
-    await this.video.play();
+    try {
+      await this.video.play();
+    } catch (error) {
+      await this.stop();
+      throw new RuntimeStartupError(
+        classifyRuntimeIssue(error),
+        error instanceof Error ? error.message : 'Video playback failed'
+      );
+    }
 
     if (calibration?.blinkThreshold) {
       this.blinkThreshold = calibration.blinkThreshold;

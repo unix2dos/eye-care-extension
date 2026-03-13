@@ -32,7 +32,10 @@ describe('buildOptionsViewModel', () => {
         sampleCount: 120
       },
       stats,
-      mode: 'vision'
+      mode: 'vision',
+      strategyPreset: 'standard',
+      lastRuntimeIssue: 'none',
+      nextEligibleReminderAt: null
     };
 
     const viewModel = buildOptionsViewModel(state, '2026-03-13');
@@ -40,6 +43,9 @@ describe('buildOptionsViewModel', () => {
     expect(viewModel.modeLabel).toBe('视觉检测');
     expect(viewModel.calibrationLabel).toContain('2026-03-13');
     expect(viewModel.calibrationSamplesLabel).toBe('120 个采样点');
+    expect(viewModel.selectedStrategyLabel).toBe('标准');
+    expect(viewModel.strategyOptions).toHaveLength(3);
+    expect(viewModel.runtimeIssueTitle).toBe('运行正常');
     expect(viewModel.summary.todayReadingMinutes).toBe(5);
   });
 
@@ -47,7 +53,10 @@ describe('buildOptionsViewModel', () => {
     const state: PersistedState = {
       calibration: null,
       stats: createEmptyStatsState(),
-      mode: 'fallback'
+      mode: 'fallback',
+      strategyPreset: 'sensitive',
+      lastRuntimeIssue: 'permission-denied',
+      nextEligibleReminderAt: new Date('2026-03-13T14:32:00+08:00').getTime()
     };
 
     const viewModel = buildOptionsViewModel(state, '2026-03-13');
@@ -55,5 +64,8 @@ describe('buildOptionsViewModel', () => {
     expect(viewModel.modeLabel).toBe('定时提醒');
     expect(viewModel.calibrationLabel).toBe('未完成校准');
     expect(viewModel.calibrationSamplesLabel).toBe('暂无采样');
+    expect(viewModel.selectedStrategyLabel).toBe('敏感');
+    expect(viewModel.runtimeIssueTitle).toBe('摄像头权限被拒绝');
+    expect(viewModel.runtimeIssueGuidance).toBe('请在当前站点的摄像头权限里选择允许，然后刷新页面重试。');
   });
 });

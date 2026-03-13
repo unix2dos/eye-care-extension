@@ -1,13 +1,23 @@
 import { createEmptyStatsState } from './stats';
-import type { CalibrationProfile, PersistedState, RuntimeMode, StatsState, StorageAreaLike } from './types';
+import type {
+  CalibrationProfile,
+  PersistedState,
+  ReminderStrategyPreset,
+  RuntimeMode,
+  StatsState,
+  StorageAreaLike
+} from './types';
 
-const STORAGE_KEY = 'weread-eye-care-state';
+export const STORAGE_KEY = 'weread-eye-care-state';
 
 function getDefaultState(): PersistedState {
   return {
     calibration: null,
     stats: createEmptyStatsState(),
-    mode: 'vision'
+    mode: 'vision',
+    strategyPreset: 'standard',
+    lastRuntimeIssue: 'none',
+    nextEligibleReminderAt: null
   };
 }
 
@@ -54,6 +64,18 @@ export class AppStorage {
   async setMode(mode: RuntimeMode): Promise<void> {
     const state = await this.loadState();
     await this.saveState({ ...state, mode });
+  }
+
+  async setStrategyPreset(strategyPreset: ReminderStrategyPreset): Promise<void> {
+    const state = await this.loadState();
+    await this.saveState({ ...state, strategyPreset });
+  }
+
+  async setRuntimeStatus(
+    status: Pick<PersistedState, 'mode' | 'lastRuntimeIssue' | 'nextEligibleReminderAt'>
+  ): Promise<void> {
+    const state = await this.loadState();
+    await this.saveState({ ...state, ...status });
   }
 
   async resetCalibration(): Promise<void> {

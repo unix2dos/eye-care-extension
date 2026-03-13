@@ -1,4 +1,6 @@
-import type { DayStats, StatsState } from '../shared/types';
+import { getStrategyMeta } from '../shared/strategy';
+import type { DayStats, PersistedState, StatsState } from '../shared/types';
+import { getRuntimeIssueCopy } from '../content/runtime/issues';
 
 export interface StatsTrendPoint {
   date: string;
@@ -14,6 +16,14 @@ export interface StatsSummary {
   totalReminderCount: number;
   recoverySuccessRate: number | null;
   trend: StatsTrendPoint[];
+}
+
+export interface ReminderStatusSummary {
+  modeLabel: string;
+  strategyLabel: string;
+  strategyDescription: string;
+  nextEligibleReminderLabel: string;
+  runtimeIssueSummary: string | null;
 }
 
 function getSortedDays(state: StatsState): DayStats[] {
@@ -40,5 +50,29 @@ export function buildStatsSummary(state: StatsState, todayDate: string): StatsSu
       reminderCount: day.reminderCount,
       averageBlinkRatePerMinute: day.averageBlinkRatePerMinute
     }))
+  };
+}
+
+function formatNextEligibleReminder(nextEligibleReminderAt: number): string {
+  return new Intl.DateTimeFormat('zh-CN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false
+  }).format(new Date(nextEligibleReminderAt));
+}
+
+export function buildReminderStatusSummary(state: PersistedState, now: number): ReminderStatusSummary {
+  const strategy = getStrategyMeta(state.strategyPreset);
+  const runtimeIssue = getRuntimeIssueCopy(state.lastRuntimeIssue);
+
+  return {
+    modeLabel: state.mode === 'vision' ? '视觉检测' : '定时提醒',
+    strategyLabel: strategy.label,
+    strategyDescription: strategy.description,
+    nextEligibleReminderLabel:
+      state.nextEligibleReminderAt !== null && state.nextEligibleReminderAt > now
+        ? formatNextEligibleReminder(state.nextEligibleReminderAt)
+        : '可立即触发',
+    runtimeIssueSummary: runtimeIssue.popupSummary
   };
 }

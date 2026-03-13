@@ -1,10 +1,20 @@
 import { DEFAULT_POLICY } from '../shared/constants';
-import { AppStorage } from '../shared/storage';
+import { getPolicyForStrategy } from '../shared/strategy';
+import { AppStorage, STORAGE_KEY } from '../shared/storage';
 import { recordReadingSample, recordReminderRecovery, recordReminderTriggered } from '../shared/stats';
-import type { CalibrationProfile, RuntimeMode, StatsState } from '../shared/types';
+import type {
+  CalibrationProfile,
+  PersistedState,
+  ReminderPolicyConfig,
+  ReminderStrategyPreset,
+  RuntimeMode,
+  RuntimeIssueCode,
+  StatsState
+} from '../shared/types';
 import { ActiveReadingSession } from './activity/session';
 import { CalibrationTracker } from './vision/calibration';
-import { EyeCareController, resolveRuntimeMode } from './runtime/controller';
+import { EyeCareController, resolveRuntimeStartup } from './runtime/controller';
+import { getRuntimeIssueCopy } from './runtime/issues';
 import { playReminderTone } from './reminder/audio';
 import { ReminderOverlay } from './reminder/overlay';
 import { MediaPipeVisionService } from './vision/service';
@@ -47,14 +57,18 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   }
 
   const overlay = new ReminderOverlay(doc);
-  const session = new ActiveReadingSession(DEFAULT_POLICY.inactivityTimeoutMs);
-  const controller = new EyeCareController(DEFAULT_POLICY);
   const storage = new AppStorage();
   const persisted = await storage.loadState();
+  let currentPolicy: ReminderPolicyConfig = getPolicyForStrategy(persisted.strategyPreset);
+  const session = new ActiveReadingSession(currentPolicy.inactivityTimeoutMs);
+  const controller = new EyeCareController(currentPolicy);
 
   let stats: StatsState = persisted.stats;
   let calibration = persisted.calibration;
   let mode: RuntimeMode = persisted.mode;
+  let strategyPreset: ReminderStrategyPreset = persisted.strategyPreset;
+  let lastRuntimeIssue: RuntimeIssueCode = persisted.lastRuntimeIssue;
+  let nextEligibleReminderAt: number | null = persisted.nextEligibleReminderAt;
   let latestBlinkRate: number | null = null;
   let latestLowBlinkDetected = false;
   let fallbackDismissTimer: number | null = null;
@@ -78,9 +92,33 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
     await storage.saveStats(stats);
   }
 
-  async function persistRuntimeMode(nextMode: RuntimeMode): Promise<void> {
+  async function persistRuntimeStatus(
+    nextStatus: Partial<Pick<PersistedState, 'mode' | 'lastRuntimeIssue' | 'nextEligibleReminderAt'>>
+  ): Promise<void> {
+    const nextMode = nextStatus.mode ?? mode;
+    const nextIssue = nextStatus.lastRuntimeIssue ?? lastRuntimeIssue;
+    const nextReminderAt =
+      nextStatus.nextEligibleReminderAt === undefined ? nextEligibleReminderAt : nextStatus.nextEligibleReminderAt;
+
+    if (nextMode === mode && nextIssue === lastRuntimeIssue && nextReminderAt === nextEligibleReminderAt) {
+      return;
+    }
+
     mode = nextMode;
-    await storage.setMode(nextMode);
+    lastRuntimeIssue = nextIssue;
+    nextEligibleReminderAt = nextReminderAt;
+
+    await storage.setRuntimeStatus({
+      mode,
+      lastRuntimeIssue,
+      nextEligibleReminderAt
+    });
+  }
+
+  async function syncNextEligibleReminder(now: number): Promise<void> {
+    await persistRuntimeStatus({
+      nextEligibleReminderAt: controller.getNextEligibleReminderAt(now)
+    });
   }
 
   async function triggerReminder(message: string): Promise<void> {
@@ -88,42 +126,80 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
     await playReminderTone().catch(() => undefined);
   }
 
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local') {
+      return;
+    }
+
+    const stateChange = changes[STORAGE_KEY];
+    if (!stateChange?.newValue || typeof stateChange.newValue !== 'object') {
+      return;
+    }
+
+    const nextState = stateChange.newValue as PersistedState;
+    if (nextState.strategyPreset === strategyPreset) {
+      return;
+    }
+
+    strategyPreset = nextState.strategyPreset;
+    currentPolicy = getPolicyForStrategy(strategyPreset);
+    controller.setPolicy(currentPolicy);
+    void syncNextEligibleReminder(Date.now());
+  });
+
   if ('mediaDevices' in navigator && typeof navigator.mediaDevices.getUserMedia === 'function') {
     visionService = new MediaPipeVisionService();
     overlay.show(calibration ? '正在启动护眼监测…' : '正在请求摄像头并准备校准…');
 
-    const resolvedMode = await resolveRuntimeMode({
+    const startup = await resolveRuntimeStartup({
       start: async () => {
         await visionService?.start(calibration ?? null);
       }
     });
 
-    await persistRuntimeMode(resolvedMode);
+    await persistRuntimeStatus({
+      mode: startup.mode,
+      lastRuntimeIssue: startup.issue
+    });
 
-    if (resolvedMode === 'vision' && visionService) {
+    if (startup.mode === 'vision' && visionService) {
       if (!calibration) {
         calibration = await runCalibration(overlay, visionService);
         if (calibration) {
           visionService.setBlinkThreshold(calibration.blinkThreshold);
           await storage.saveCalibration(calibration);
+          await persistRuntimeStatus({
+            mode: 'vision',
+            lastRuntimeIssue: 'none'
+          });
           overlay.show('校准完成，护眼监测已开启。');
         } else {
           await visionService.stop();
           visionService = null;
           calibration = null;
-          await persistRuntimeMode('fallback');
-          overlay.show('校准失败，已切换为定时提醒模式。');
+          await persistRuntimeStatus({
+            mode: 'fallback',
+            lastRuntimeIssue: 'calibration-failed'
+          });
+          overlay.show(getRuntimeIssueCopy('calibration-failed').overlayMessage);
         }
       } else {
         visionService.setBlinkThreshold(calibration.blinkThreshold);
+        await persistRuntimeStatus({
+          mode: 'vision',
+          lastRuntimeIssue: 'none'
+        });
         overlay.show('护眼监测已开启。');
       }
     } else {
-      overlay.show('摄像头不可用，已切换为定时提醒模式。');
+      overlay.show(getRuntimeIssueCopy(startup.issue).overlayMessage);
     }
   } else {
-    await persistRuntimeMode('fallback');
-    overlay.show('当前浏览器不支持摄像头，已切换为定时提醒模式。');
+    await persistRuntimeStatus({
+      mode: 'fallback',
+      lastRuntimeIssue: 'browser-unsupported'
+    });
+    overlay.show(getRuntimeIssueCopy('browser-unsupported').overlayMessage);
   }
 
   win.setTimeout(() => overlay.hide(), 2_000);
@@ -135,6 +211,7 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
       latestLowBlinkDetected = false;
       controller.resetReadingState();
       controller.cancelReminder(now);
+      void syncNextEligibleReminder(now);
       overlay.hide();
       return;
     }
@@ -178,6 +255,7 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
 
         if (result.reminderDismissed) {
           overlay.hide();
+          await syncNextEligibleReminder(now);
           recordReminderRecovery(stats, {
             date: getTodayDate(),
             bookTitle: getWeReadBookTitle(doc),
@@ -213,8 +291,10 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
       void triggerReminder('休息一下，眨眼或看远处 10 秒。');
 
       fallbackDismissTimer = win.setTimeout(() => {
+        const dismissedAt = Date.now();
         overlay.hide();
-        controller.dismissFallback(Date.now());
+        controller.dismissFallback(dismissedAt);
+        void syncNextEligibleReminder(dismissedAt);
         recordReminderRecovery(stats, {
           date: getTodayDate(),
           bookTitle: getWeReadBookTitle(doc),

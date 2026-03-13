@@ -1,5 +1,6 @@
 import { exportBookStatsCsv } from '../shared/csv';
 import { AppStorage } from '../shared/storage';
+import type { ReminderStrategyPreset } from '../shared/types';
 import { buildOptionsViewModel } from './view-model';
 
 function today(): string {
@@ -35,6 +36,7 @@ async function render(): Promise<void> {
       <p>统计仅保存在当前 Chrome 本地，不上传原始画面或阅读记录。</p>
       <div class="metrics">
         <div class="metric"><div>当前模式</div><strong>${viewModel.modeLabel}</strong></div>
+        <div class="metric"><div>当前策略</div><strong>${viewModel.selectedStrategyLabel}</strong></div>
         <div class="metric"><div>最近校准</div><strong>${viewModel.calibrationLabel}</strong></div>
         <div class="metric"><div>校准采样</div><strong>${viewModel.calibrationSamplesLabel}</strong></div>
         <div class="metric"><div>今日阅读</div><strong>${viewModel.summary.todayReadingMinutes} 分钟</strong></div>
@@ -42,6 +44,31 @@ async function render(): Promise<void> {
         <div class="metric"><div>今日提醒</div><strong>${viewModel.summary.todayReminderCount} 次</strong></div>
         <div class="metric"><div>恢复成功率</div><strong>${recoveryRate}</strong></div>
       </div>
+      <section class="trend">
+        <h2>提醒策略</h2>
+        <div class="strategy-list">
+          ${viewModel.strategyOptions
+            .map(
+              (option) => `
+                <label class="strategy-option">
+                  <input type="radio" name="strategy" value="${option.id}" ${option.selected ? 'checked' : ''} />
+                  <span>
+                    <strong>${option.label}</strong>
+                    <small>${option.description}</small>
+                  </span>
+                </label>
+              `
+            )
+            .join('')}
+        </div>
+      </section>
+      <section class="trend">
+        <h2>启动状态</h2>
+        <div class="metric">
+          <div>${viewModel.runtimeIssueTitle}</div>
+          <strong>${viewModel.runtimeIssueGuidance}</strong>
+        </div>
+      </section>
       <div class="actions">
         <button id="export">导出按书统计 CSV</button>
         <button id="recalibrate">重新校准</button>
@@ -79,6 +106,17 @@ async function render(): Promise<void> {
 
   document.getElementById('export')?.addEventListener('click', () => {
     downloadCsv(`weread-eye-care-${today()}.csv`, exportBookStatsCsv(state.stats));
+  });
+
+  document.querySelectorAll<HTMLInputElement>('input[name="strategy"]').forEach((input) => {
+    input.addEventListener('change', async () => {
+      if (!input.checked) {
+        return;
+      }
+
+      await storage.setStrategyPreset(input.value as ReminderStrategyPreset);
+      await render();
+    });
   });
 
   document.getElementById('recalibrate')?.addEventListener('click', async () => {

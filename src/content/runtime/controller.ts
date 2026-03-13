@@ -1,5 +1,6 @@
 import { shouldDismissReminder, shouldTriggerFallbackReminder, shouldTriggerVisionReminder } from '../../shared/policy';
-import type { ReminderPolicyConfig, RuntimeMode } from '../../shared/types';
+import type { ReminderPolicyConfig, RuntimeIssueCode, RuntimeMode } from '../../shared/types';
+import { classifyRuntimeIssue } from './issues';
 
 export interface VisionObservation {
   now: number;
@@ -10,6 +11,11 @@ export interface VisionObservation {
 
 export interface VisionServiceLike {
   start(): Promise<void>;
+}
+
+export interface RuntimeStartupResult {
+  mode: RuntimeMode;
+  issue: RuntimeIssueCode;
 }
 
 export interface ControllerResult {
@@ -33,23 +39,36 @@ function createResult(overrides: Partial<ControllerResult> = {}): ControllerResu
   };
 }
 
-export async function resolveRuntimeMode(service: VisionServiceLike): Promise<RuntimeMode> {
+export async function resolveRuntimeStartup(service: VisionServiceLike): Promise<RuntimeStartupResult> {
   try {
     await service.start();
-    return 'vision';
-  } catch {
-    return 'fallback';
+    return {
+      mode: 'vision',
+      issue: 'none'
+    };
+  } catch (error) {
+    return {
+      mode: 'fallback',
+      issue: classifyRuntimeIssue(error)
+    };
   }
 }
 
 export class EyeCareController {
+  private policy: ReminderPolicyConfig;
   private readonly blinkTimestamps: number[] = [];
   private focusStartAt: number | null = null;
   private reminderStartedAt: number | null = null;
   private blinksSinceReminder = 0;
   private lastReminderEndedAt: number | null = null;
 
-  constructor(private readonly policy: ReminderPolicyConfig) {}
+  constructor(policy: ReminderPolicyConfig) {
+    this.policy = policy;
+  }
+
+  setPolicy(policy: ReminderPolicyConfig): void {
+    this.policy = policy;
+  }
 
   private pruneBlinkWindow(now: number): void {
     const lowerBound = now - this.policy.blinkWindowMs;
@@ -74,6 +93,15 @@ export class EyeCareController {
       this.lastReminderEndedAt = now;
       this.blinksSinceReminder = 0;
     }
+  }
+
+  getNextEligibleReminderAt(now: number): number | null {
+    if (this.lastReminderEndedAt === null) {
+      return null;
+    }
+
+    const nextEligibleReminderAt = this.lastReminderEndedAt + this.policy.reminderCooldownMs;
+    return nextEligibleReminderAt > now ? nextEligibleReminderAt : null;
   }
 
   updateVision(
