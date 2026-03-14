@@ -1,4 +1,5 @@
 import { DEFAULT_POLICY, DEFAULT_REMINDER_SETTINGS } from '../shared/constants';
+import { TOOLBAR_ICON_STATE_COMMAND } from '../shared/messages';
 import { AppStorage, STORAGE_KEY } from '../shared/storage';
 import { recordReadingSample, recordReminderTriggered } from '../shared/stats';
 import type { PersistedState, ReminderSettings, StatsState } from '../shared/types';
@@ -60,6 +61,18 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   let isActiveReading = persisted.isActiveReading;
   let settings: ReminderSettings = persisted.settings ?? DEFAULT_REMINDER_SETTINGS;
 
+  const reportToolbarIconState = async (nextIsActiveReading: boolean): Promise<void> => {
+    try {
+      await chrome.runtime.sendMessage({
+        type: TOOLBAR_ICON_STATE_COMMAND,
+        isSupportedPage: true,
+        isActiveReading: nextIsActiveReading
+      });
+    } catch {
+      // The reading flow should keep working even if toolbar updates fail.
+    }
+  };
+
   const persistRuntimeStatus = async (
     nextStatus: Partial<Pick<PersistedState, 'activeReadingTimeMs' | 'isActiveReading' | 'nextEligibleReminderAt'>>
   ): Promise<void> => {
@@ -76,6 +89,8 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
       return;
     }
 
+    const shouldReportToolbarState = nextIsActiveReading !== isActiveReading;
+
     activeReadingTimeMs = nextActiveReadingTimeMs;
     isActiveReading = nextIsActiveReading;
     nextEligibleReminderAt = nextReminderAt;
@@ -85,6 +100,10 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
       isActiveReading,
       nextEligibleReminderAt
     });
+
+    if (shouldReportToolbarState) {
+      await reportToolbarIconState(isActiveReading);
+    }
   };
 
   const persistStats = async (): Promise<void> => {
@@ -131,6 +150,7 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
 
   const markInteraction = () => {
     session.markInteraction(Date.now());
+    void reportToolbarIconState(session.isActive(Date.now()));
   };
 
   ['scroll', 'click', 'keydown', 'wheel'].forEach((eventName) => {
@@ -139,6 +159,7 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
 
   doc.addEventListener('visibilitychange', () => {
     session.setVisibility(doc.visibilityState === 'visible', Date.now());
+    void reportToolbarIconState(session.isActive(Date.now()));
     if (doc.visibilityState !== 'visible') {
       void persistRuntimeStatus({
         isActiveReading: false,
@@ -174,11 +195,8 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   });
 
   markInteraction();
-  await persistRuntimeStatus({
-    activeReadingTimeMs,
-    isActiveReading,
-    nextEligibleReminderAt
-  });
+  await syncSchedule(Date.now());
+  await reportToolbarIconState(session.isActive(Date.now()));
 
   win.setInterval(() => {
     void (async () => {
