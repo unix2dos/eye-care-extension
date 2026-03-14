@@ -1,8 +1,8 @@
 import { DEFAULT_POLICY, DEFAULT_REMINDER_SETTINGS } from '../shared/constants';
-import { TOOLBAR_ICON_STATE_COMMAND } from '../shared/messages';
+import { REQUEST_RUNTIME_STATUS_COMMAND, TOOLBAR_ICON_STATE_COMMAND } from '../shared/messages';
 import { AppStorage, STORAGE_KEY } from '../shared/storage';
 import { recordReadingSample, recordReminderTriggered } from '../shared/stats';
-import type { PersistedState, ReminderSettings, StatsState } from '../shared/types';
+import type { PersistedState, ReminderSettings, RuntimeStatusSnapshot, StatsState } from '../shared/types';
 import { ActiveReadingSession } from './activity/session';
 import { createPreviewReminderRunner } from './preview';
 import {
@@ -138,6 +138,23 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
     await dismissed;
   };
 
+  const getRuntimeStatusSnapshot = async (now: number): Promise<RuntimeStatusSnapshot> => {
+    const schedule = await syncSchedule(now);
+    const isReminderBlockingVisible = overlay.isBlockingReminderVisible();
+    const isDocumentVisible = doc.visibilityState === 'visible' && session.isVisibleNow();
+    const isActiveReadingNow = !isReminderBlockingVisible && isDocumentVisible && schedule.isActive;
+
+    return {
+      isSupportedPage: true,
+      isDocumentVisible,
+      isActiveReading: isActiveReadingNow,
+      lastInteractionAt: session.getLastInteractionAt(),
+      activeReadingTimeMs: schedule.activeReadingTimeMs,
+      nextEligibleReminderAt: isActiveReadingNow ? schedule.nextReminderAt : null,
+      inactivityTimeoutMs: DEFAULT_POLICY.inactivityTimeoutMs
+    };
+  };
+
   const applySettings = async (nextSettings: ReminderSettings): Promise<void> => {
     if (areSettingsEqual(settings, nextSettings)) {
       return;
@@ -174,12 +191,19 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
     getPresentation: () => getReminderPresentation(settings)
   });
 
-  chrome.runtime.onMessage.addListener((message) => {
-    if (message?.type !== 'preview-reminder') {
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type === 'preview-reminder') {
+      void previewReminder();
       return false;
     }
 
-    void previewReminder();
+    if (message?.type === REQUEST_RUNTIME_STATUS_COMMAND) {
+      void (async () => {
+        sendResponse(await getRuntimeStatusSnapshot(Date.now()));
+      })();
+      return true;
+    }
+
     return false;
   });
 

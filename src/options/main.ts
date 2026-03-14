@@ -1,6 +1,7 @@
 import { AppStorage } from '../shared/storage';
 import { REMINDER_INTERVAL_OPTIONS } from '../shared/constants';
 import { exportBookStatsCsv } from '../shared/csv';
+import { resolveOptionsRuntimeStatus } from '../shared/runtime-status';
 import type { ReminderSettings } from '../shared/types';
 import { buildExportFilename, downloadCsv } from './export';
 import { buildOptionsViewModel } from './view-model';
@@ -18,7 +19,8 @@ function parseReminderIntervalMinutes(value: string): ReminderSettings['reminder
 async function render(settingsStatusMessage = '修改后会立即保存并同步到当前阅读页。'): Promise<void> {
   const storage = new AppStorage();
   const state = await storage.loadState();
-  const viewModel = buildOptionsViewModel(state, today());
+  const runtimeStatus = await resolveOptionsRuntimeStatus(state);
+  const viewModel = buildOptionsViewModel(state, runtimeStatus, today());
   const app = document.getElementById('app');
 
   if (!app) {
@@ -32,9 +34,18 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
       <div class="metrics">
         <div class="metric"><div>今日阅读</div><strong>${viewModel.summary.todayReadingMinutes} 分钟</strong></div>
         <div class="metric"><div>今日提醒</div><strong>${viewModel.summary.todayReminderCount} 次</strong></div>
-        <div class="metric"><div>阅读状态</div><strong>${viewModel.readingStatusLabel}</strong></div>
-        <div class="metric"><div>下次提醒</div><strong>${viewModel.nextReminderLabel}</strong></div>
+        <div class="metric"><div>阅读状态</div><strong id="reading-status-value">${viewModel.readingStatusLabel}</strong></div>
+        <div class="metric"><div>下次提醒</div><strong id="next-reminder-value">${viewModel.nextReminderLabel}</strong></div>
       </div>
+      <section class="runtime-status">
+        <h2>当前状态</h2>
+        <p id="status-explanation">${viewModel.statusExplanationLabel}</p>
+        <dl id="runtime-status-list" class="status-list">
+          ${viewModel.runtimeDetails
+            .map(({ label, value }) => `<div><dt>${label}</dt><dd>${value}</dd></div>`)
+            .join('')}
+        </dl>
+      </section>
       <section class="settings">
         <h2>提醒设置</h2>
         <label class="setting">
@@ -80,6 +91,34 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
     await render('提醒设置已保存。');
   };
 
+  const updateRuntimeStatus = async () => {
+    const latestState = await storage.loadState();
+    const latestRuntimeStatus = await resolveOptionsRuntimeStatus(latestState);
+    const latestViewModel = buildOptionsViewModel(latestState, latestRuntimeStatus, today(), Date.now());
+    const readingStatusNode = document.getElementById('reading-status-value');
+    const nextReminderNode = document.getElementById('next-reminder-value');
+    const explanationNode = document.getElementById('status-explanation');
+    const runtimeListNode = document.getElementById('runtime-status-list');
+
+    if (readingStatusNode) {
+      readingStatusNode.textContent = latestViewModel.readingStatusLabel;
+    }
+
+    if (nextReminderNode) {
+      nextReminderNode.textContent = latestViewModel.nextReminderLabel;
+    }
+
+    if (explanationNode) {
+      explanationNode.textContent = latestViewModel.statusExplanationLabel;
+    }
+
+    if (runtimeListNode) {
+      runtimeListNode.innerHTML = latestViewModel.runtimeDetails
+        .map(({ label, value }) => `<div><dt>${label}</dt><dd>${value}</dd></div>`)
+        .join('');
+    }
+  };
+
   document.getElementById('reminder-interval')?.addEventListener('change', () => {
     void persistSettings();
   });
@@ -103,6 +142,10 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
     await storage.resetState();
     await render('本地统计与提醒设置都已恢复默认值。');
   });
+
+  window.setInterval(() => {
+    void updateRuntimeStatus();
+  }, 1_000);
 }
 
 void render();

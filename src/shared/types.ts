@@ -9,6 +9,16 @@ export interface ReminderSettings {
   fullscreenReminder: boolean;
 }
 
+export interface RuntimeStatusSnapshot {
+  isSupportedPage: boolean;
+  isDocumentVisible: boolean;
+  isActiveReading: boolean;
+  lastInteractionAt: number | null;
+  activeReadingTimeMs: number;
+  nextEligibleReminderAt: number | null;
+  inactivityTimeoutMs: number;
+}
+
 export interface ReadingSample {
   date: string;
   bookTitle: string;

@@ -1,25 +1,20 @@
 import { AppStorage } from '../shared/storage';
+import { getActiveTab, resolvePopupRuntimeStatus } from '../shared/runtime-status';
 import { buildReminderStatusSummary, buildStatsSummary } from '../ui/summary';
 import {
   PREVIEW_REMINDER_COMMAND,
   buildPreviewReminderState
 } from './preview';
 import { bindPopupActions } from './actions';
-import { derivePopupRuntimeState } from './live-status';
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-async function getActiveTab(): Promise<chrome.tabs.Tab | null> {
-  const tabs = await chrome.tabs.query({ active: true, currentWindow: true });
-  return tabs[0] ?? null;
-}
-
 async function render(): Promise<void> {
   const storage = new AppStorage();
-  const state = await storage.loadState();
-  const summary = buildStatsSummary(state.stats, today());
+  const persistedState = await storage.loadState();
+  const summary = buildStatsSummary(persistedState.stats, today());
   const activeTab = await getActiveTab();
   const previewState = buildPreviewReminderState(activeTab);
   const app = document.getElementById('app');
@@ -28,19 +23,23 @@ async function render(): Promise<void> {
     return;
   }
 
-  const popupOpenedAt = Date.now();
-  const updateStatus = () => {
-    const liveState = derivePopupRuntimeState(state, popupOpenedAt, Date.now());
-    const status = buildReminderStatusSummary(liveState, Date.now());
+  const updateStatus = async () => {
+    const runtimeStatus = await resolvePopupRuntimeStatus(activeTab, await storage.loadState());
+    const status = buildReminderStatusSummary(runtimeStatus, Date.now());
     const readingStatusNode = document.getElementById('reading-status-value');
     const nextReminderNode = document.getElementById('next-reminder-value');
+    const explanationNode = document.getElementById('status-explanation');
 
     if (readingStatusNode) {
-      readingStatusNode.textContent = previewState.enabled ? status.readingStatusLabel : '已暂停 · 0分00秒';
+      readingStatusNode.textContent = status.readingStatusLabel;
     }
 
     if (nextReminderNode) {
-      nextReminderNode.textContent = previewState.enabled ? status.nextEligibleReminderLabel : '等待开始阅读';
+      nextReminderNode.textContent = status.nextEligibleReminderLabel;
+    }
+
+    if (explanationNode) {
+      explanationNode.textContent = status.statusExplanationLabel;
     }
   };
 
@@ -54,6 +53,7 @@ async function render(): Promise<void> {
         <div class="metric"><span>阅读状态</span><strong id="reading-status-value"></strong></div>
         <div class="metric"><span>下次提醒</span><strong id="next-reminder-value"></strong></div>
       </div>
+      <p class="hint" id="status-explanation"></p>
       <div class="actions">
         <button id="preview-reminder" ${previewState.enabled ? '' : 'disabled'}>预览提醒</button>
         <button id="open-settings" class="secondary">提醒设置</button>
@@ -61,8 +61,10 @@ async function render(): Promise<void> {
     </section>
   `;
 
-  updateStatus();
-  window.setInterval(updateStatus, 1_000);
+  await updateStatus();
+  window.setInterval(() => {
+    void updateStatus();
+  }, 1_000);
 
   bindPopupActions({
     root: document,

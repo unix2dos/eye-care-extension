@@ -22,7 +22,6 @@ export class ActiveReadingSession {
 
     if (!isVisible) {
       this.activeSince = null;
-      this.lastInteractionAt = null;
     }
   }
 
@@ -32,5 +31,13 @@ export class ActiveReadingSession {
 
   getActiveReadingSince(now: number): number | null {
     return this.isActive(now) ? this.activeSince : null;
+  }
+
+  getLastInteractionAt(): number | null {
+    return this.lastInteractionAt;
+  }
+
+  isVisibleNow(): boolean {
+    return this.isVisible;
   }
 }
