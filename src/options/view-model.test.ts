@@ -17,16 +17,16 @@ describe('buildOptionsViewModel', () => {
 
     const state = {
       stats,
-      activeReadingTimeMs: 5 * 60_000,
+      activeReadingTimeMs: 5 * 60_000 + 12_000,
       isActiveReading: true,
-      nextEligibleReminderAt: new Date('2026-03-13T14:32:00+08:00').getTime()
+      nextEligibleReminderAt: new Date('2026-03-13T14:32:18+08:00').getTime()
     } as PersistedState;
 
     const viewModel = buildOptionsViewModel(state, '2026-03-13', new Date('2026-03-13T14:30:00+08:00').getTime());
 
     expect(viewModel).toEqual({
-      readingStatusLabel: '计时中 · 5 分钟',
-      nextReminderLabel: '14:32',
+      readingStatusLabel: '计时中 · 5分12秒',
+      nextReminderLabel: '2分18秒后',
       summary: {
         todayReadingMinutes: 5,
         todayReminderCount: 1
@@ -44,7 +44,7 @@ describe('buildOptionsViewModel', () => {
 
     const viewModel = buildOptionsViewModel(state, '2026-03-13');
 
-    expect(viewModel.readingStatusLabel).toBe('已暂停 · 12 分钟');
+    expect(viewModel.readingStatusLabel).toBe('已暂停 · 12分00秒');
     expect(viewModel.nextReminderLabel).toBe('等待开始阅读');
   });
 });

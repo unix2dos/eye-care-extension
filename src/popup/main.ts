@@ -5,6 +5,7 @@ import {
   PREVIEW_REMINDER_COMMAND,
   buildPreviewReminderState
 } from './preview';
+import { bindPopupActions } from './actions';
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -35,28 +36,35 @@ async function render(): Promise<void> {
       <div class="grid">
         <div class="metric"><span>今日阅读</span><strong>${summary.todayReadingMinutes} 分钟</strong></div>
         <div class="metric"><span>今日提醒</span><strong>${summary.todayReminderCount} 次</strong></div>
-        <div class="metric"><span>阅读状态</span><strong>${previewState.enabled ? status.readingStatusLabel : '已暂停 · 0 分钟'}</strong></div>
+        <div class="metric"><span>阅读状态</span><strong>${previewState.enabled ? status.readingStatusLabel : '已暂停 · 0分00秒'}</strong></div>
         <div class="metric"><span>下次提醒</span><strong>${previewState.enabled ? status.nextEligibleReminderLabel : '等待开始阅读'}</strong></div>
       </div>
       <div style="margin-top: 14px;">
         <button id="preview-reminder" ${previewState.enabled ? '' : 'disabled'}>预览提醒</button>
+        <button id="open-settings" class="secondary" style="margin-left: 10px;">提醒设置</button>
       </div>
       <div class="hint">${previewState.hint ?? '在当前阅读页直接预览真实提醒效果。'}</div>
       <div class="hint">默认会用语音提醒你休息一下。</div>
     </section>
   `;
 
-  document.getElementById('preview-reminder')?.addEventListener('click', async () => {
-    if (!previewState.enabled || previewState.tabId === null) {
-      return;
-    }
+  bindPopupActions({
+    root: document,
+    onPreview: async () => {
+      if (!previewState.enabled || previewState.tabId === null) {
+        return;
+      }
 
-    try {
-      await chrome.tabs.sendMessage(previewState.tabId, {
-        type: PREVIEW_REMINDER_COMMAND
-      });
-    } catch {
-      // Keep the popup usable even if the target page was reloaded or unsupported.
+      try {
+        await chrome.tabs.sendMessage(previewState.tabId, {
+          type: PREVIEW_REMINDER_COMMAND
+        });
+      } catch {
+        // Keep the popup usable even if the target page was reloaded or unsupported.
+      }
+    },
+    onOpenSettings: async () => {
+      await chrome.runtime.openOptionsPage();
     }
   });
 }

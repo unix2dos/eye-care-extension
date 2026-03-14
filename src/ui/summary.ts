@@ -23,23 +23,23 @@ export function buildStatsSummary(state: StatsState, todayDate: string): StatsSu
   };
 }
 
-function formatNextEligibleReminder(nextEligibleReminderAt: number): string {
-  return new Intl.DateTimeFormat('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  }).format(new Date(nextEligibleReminderAt));
-}
+function formatCompactDuration(durationMs: number): string {
+  const totalSeconds = Math.max(0, Math.floor(durationMs / 1_000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
 
-function formatActiveReadingMinutes(activeReadingTimeMs: number): number {
-  return Math.max(0, Math.floor(activeReadingTimeMs / 60_000));
+  return `${minutes}分${String(seconds).padStart(2, '0')}秒`;
 }
 
 function buildReadingStatusLabel(isActiveReading: boolean, activeReadingTimeMs: number): string {
-  const minutes = formatActiveReadingMinutes(activeReadingTimeMs);
+  const duration = formatCompactDuration(activeReadingTimeMs);
   const prefix = isActiveReading ? '计时中' : '已暂停';
 
-  return `${prefix} · ${minutes} 分钟`;
+  return `${prefix} · ${duration}`;
+}
+
+function formatNextEligibleReminder(nextEligibleReminderAt: number, now: number): string {
+  return `${formatCompactDuration(nextEligibleReminderAt - now)}后`;
 }
 
 export function buildReminderStatusSummary(state: PersistedState, now: number): ReminderStatusSummary {
@@ -52,7 +52,7 @@ export function buildReminderStatusSummary(state: PersistedState, now: number): 
     nextEligibleReminderLabel: !isActiveReading
       ? '等待开始阅读'
       : nextEligibleReminderAt !== null && nextEligibleReminderAt > now
-        ? formatNextEligibleReminder(nextEligibleReminderAt)
+        ? formatNextEligibleReminder(nextEligibleReminderAt, now)
         : '可立即触发'
   };
 }
