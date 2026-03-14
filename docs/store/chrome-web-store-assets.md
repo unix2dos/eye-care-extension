@@ -15,6 +15,8 @@ This folder contains the localized Chrome Web Store listing copy and the store-r
   - `24-bit PNG`
   - no alpha channel
 
+The repository keeps the final PNG screenshots. The intermediate HTML fixtures are generated on demand and are intentionally not tracked.
+
 ## Screenshot Assets
 
 ### Chinese
