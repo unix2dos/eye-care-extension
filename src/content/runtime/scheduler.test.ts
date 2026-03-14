@@ -49,4 +49,19 @@ describe('ActiveReadingReminderScheduler', () => {
     expect(afterReset.reminderDue).toBe(false);
     expect(afterReset.nextReminderAt).toBe(40 * 60_000 + 1_000);
   });
+
+  it('recalculates the next reminder when the interval setting changes', () => {
+    const scheduler = new ActiveReadingReminderScheduler(20 * 60_000);
+
+    scheduler.update(1_000, true);
+    const before = scheduler.update(10 * 60_000 + 1_000, true);
+    expect(before.nextReminderAt).toBe(20 * 60_000 + 1_000);
+
+    scheduler.setReminderIntervalMs(30 * 60_000);
+    const after = scheduler.update(10 * 60_000 + 1_000, true);
+
+    expect(after.activeReadingTimeMs).toBe(10 * 60_000);
+    expect(after.reminderDue).toBe(false);
+    expect(after.nextReminderAt).toBe(30 * 60_000 + 1_000);
+  });
 });

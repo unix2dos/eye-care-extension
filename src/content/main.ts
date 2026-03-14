@@ -1,16 +1,36 @@
-import { DEFAULT_POLICY } from '../shared/constants';
-import { AppStorage } from '../shared/storage';
+import { DEFAULT_POLICY, DEFAULT_REMINDER_SETTINGS } from '../shared/constants';
+import { AppStorage, STORAGE_KEY } from '../shared/storage';
 import { recordReadingSample, recordReminderTriggered } from '../shared/stats';
-import type { PersistedState, StatsState } from '../shared/types';
+import type { PersistedState, ReminderSettings, StatsState } from '../shared/types';
 import { ActiveReadingSession } from './activity/session';
 import { createPreviewReminderRunner } from './preview';
-import { createReminderAudioPlayer, type ReminderAudioDebugInfo } from './reminder/audio';
-import { ReminderOverlay } from './reminder/overlay';
+import {
+  createDisabledReminderAudioDebugInfo,
+  createReminderAudioPlayer,
+  type ReminderAudioDebugInfo
+} from './reminder/audio';
+import { ReminderOverlay, type ReminderOverlayPresentation } from './reminder/overlay';
 import { DEFAULT_REMINDER_SPEECH } from './reminder/tts';
 import { ActiveReadingReminderScheduler } from './runtime/scheduler';
 import { getWeReadBookTitle, isSupportedWeReadUrl } from './weread/adapter';
 
 const STATS_SAMPLE_INTERVAL_MS = 5_000;
+
+function getReminderIntervalMs(settings: ReminderSettings): number {
+  return settings.reminderIntervalMinutes * 60_000;
+}
+
+function getReminderPresentation(settings: ReminderSettings): ReminderOverlayPresentation {
+  return settings.fullscreenReminder ? 'fullscreen' : 'compact';
+}
+
+function areSettingsEqual(left: ReminderSettings, right: ReminderSettings): boolean {
+  return (
+    left.reminderIntervalMinutes === right.reminderIntervalMinutes &&
+    left.audioEnabled === right.audioEnabled &&
+    left.fullscreenReminder === right.fullscreenReminder
+  );
+}
 
 function getTodayDate(): string {
   return new Date().toISOString().slice(0, 10);
@@ -29,7 +49,7 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   const persisted = await storage.loadState();
   const session = new ActiveReadingSession(DEFAULT_POLICY.inactivityTimeoutMs);
   const scheduler = new ActiveReadingReminderScheduler(
-    DEFAULT_POLICY.reminderIntervalMs,
+    getReminderIntervalMs(persisted.settings),
     persisted.activeReadingTimeMs
   );
   const playReminderAudio = createReminderAudioPlayer();
@@ -38,6 +58,7 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   let nextEligibleReminderAt: number | null = persisted.nextEligibleReminderAt;
   let activeReadingTimeMs = persisted.activeReadingTimeMs;
   let isActiveReading = persisted.isActiveReading;
+  let settings: ReminderSettings = persisted.settings ?? DEFAULT_REMINDER_SETTINGS;
 
   const persistRuntimeStatus = async (
     nextStatus: Partial<Pick<PersistedState, 'activeReadingTimeMs' | 'isActiveReading' | 'nextEligibleReminderAt'>>
@@ -87,15 +108,25 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   };
 
   const playReminder = async () => {
-    const debugInfo = await playReminderAudio();
+    const debugInfo = settings.audioEnabled ? await playReminderAudio() : createDisabledReminderAudioDebugInfo();
     recordReminderAudioDebug(debugInfo);
     return debugInfo;
   };
 
   const triggerReminder = async () => {
-    const dismissed = overlay.show(DEFAULT_REMINDER_SPEECH, 'reminder');
+    const dismissed = overlay.show(DEFAULT_REMINDER_SPEECH, 'reminder', getReminderPresentation(settings));
     await playReminder();
     await dismissed;
+  };
+
+  const applySettings = async (nextSettings: ReminderSettings): Promise<void> => {
+    if (areSettingsEqual(settings, nextSettings)) {
+      return;
+    }
+
+    settings = nextSettings;
+    scheduler.setReminderIntervalMs(getReminderIntervalMs(settings));
+    await syncSchedule(Date.now());
   };
 
   const markInteraction = () => {
@@ -118,7 +149,8 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
 
   const previewReminder = createPreviewReminderRunner({
     overlay,
-    playReminder
+    playReminder,
+    getPresentation: () => getReminderPresentation(settings)
   });
 
   chrome.runtime.onMessage.addListener((message) => {
@@ -128,6 +160,17 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
 
     void previewReminder();
     return false;
+  });
+
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'local' || !changes[STORAGE_KEY]) {
+      return;
+    }
+
+    void (async () => {
+      const latest = await storage.loadState();
+      await applySettings(latest.settings);
+    })();
   });
 
   markInteraction();
@@ -175,7 +218,7 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
       await persistRuntimeStatus({
         activeReadingTimeMs: 0,
         isActiveReading: true,
-        nextEligibleReminderAt: now + DEFAULT_POLICY.reminderIntervalMs
+        nextEligibleReminderAt: now + getReminderIntervalMs(settings)
       });
 
       await triggerReminder();

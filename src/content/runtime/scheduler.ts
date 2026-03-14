@@ -9,12 +9,18 @@ export class ActiveReadingReminderScheduler {
   private accumulatedActiveReadingMs: number;
   private lastUpdatedAt: number | null = null;
   private wasActive = false;
+  private reminderIntervalMs: number;
 
   constructor(
-    private readonly reminderIntervalMs: number,
+    reminderIntervalMs: number,
     initialActiveReadingTimeMs = 0
   ) {
+    this.reminderIntervalMs = reminderIntervalMs;
     this.accumulatedActiveReadingMs = initialActiveReadingTimeMs;
+  }
+
+  setReminderIntervalMs(reminderIntervalMs: number): void {
+    this.reminderIntervalMs = reminderIntervalMs;
   }
 
   update(now: number, isActive: boolean): ReminderScheduleStatus {

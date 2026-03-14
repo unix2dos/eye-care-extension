@@ -4,7 +4,7 @@ import { exportBookStatsCsv } from './csv';
 import { createEmptyStatsState, recordReadingSample, recordReminderTriggered } from './stats';
 
 describe('exportBookStatsCsv', () => {
-  it('exports the minimal no-camera stats fields', () => {
+  it('exports the minimal reminder stats fields', () => {
     const state = createEmptyStatsState();
 
     recordReadingSample(state, {

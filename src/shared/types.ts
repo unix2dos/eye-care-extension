@@ -3,6 +3,12 @@ export interface ReminderPolicyConfig {
   reminderIntervalMs: number;
 }
 
+export interface ReminderSettings {
+  reminderIntervalMinutes: 15 | 20 | 30;
+  audioEnabled: boolean;
+  fullscreenReminder: boolean;
+}
+
 export interface ReadingSample {
   date: string;
   bookTitle: string;
@@ -31,6 +37,7 @@ export interface PersistedState {
   activeReadingTimeMs: number;
   isActiveReading: boolean;
   nextEligibleReminderAt: number | null;
+  settings: ReminderSettings;
 }
 
 export interface StorageAreaLike {

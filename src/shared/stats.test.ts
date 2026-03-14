@@ -1,7 +1,7 @@
 import { createEmptyStatsState, recordReadingSample, recordReminderTriggered } from './stats';
 
 describe('stats aggregation', () => {
-  it('aggregates daily and per-book reading samples without camera-era metrics', () => {
+  it('aggregates daily and per-book reading samples with the current minimal stats model', () => {
     const state = createEmptyStatsState();
 
     recordReadingSample(state, {

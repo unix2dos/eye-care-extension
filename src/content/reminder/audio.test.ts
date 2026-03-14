@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { DEFAULT_REMINDER_AUDIO_PATH, createReminderAudioPlayer } from './audio';
+import {
+  DEFAULT_REMINDER_AUDIO_PATH,
+  createDisabledReminderAudioDebugInfo,
+  createReminderAudioPlayer
+} from './audio';
 
 describe('createReminderAudioPlayer', () => {
   it('replays the bundled reminder audio from the start each time', async () => {
@@ -49,6 +53,15 @@ describe('createReminderAudioPlayer', () => {
       playbackKind: 'bundled-audio',
       status: 'play-failed',
       errorMessage: 'blocked'
+    });
+  });
+
+  it('returns a disabled debug payload when reminder audio is turned off', () => {
+    expect(createDisabledReminderAudioDebugInfo((path) => `chrome-extension://test/${path}`)).toEqual({
+      sourceUrl: `chrome-extension://test/${DEFAULT_REMINDER_AUDIO_PATH}`,
+      playbackKind: 'bundled-audio',
+      status: 'disabled',
+      errorMessage: null
     });
   });
 });

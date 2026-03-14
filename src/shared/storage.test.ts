@@ -49,7 +49,12 @@ describe('AppStorage', () => {
       stats,
       activeReadingTimeMs: 240_000,
       isActiveReading: true,
-      nextEligibleReminderAt: 208_000
+      nextEligibleReminderAt: 208_000,
+      settings: {
+        reminderIntervalMinutes: 20,
+        audioEnabled: true,
+        fullscreenReminder: true
+      }
     });
   });
 
@@ -69,7 +74,44 @@ describe('AppStorage', () => {
       stats: createEmptyStatsState(),
       activeReadingTimeMs: 0,
       isActiveReading: false,
-      nextEligibleReminderAt: null
+      nextEligibleReminderAt: null,
+      settings: {
+        reminderIntervalMinutes: 20,
+        audioEnabled: true,
+        fullscreenReminder: true
+      }
+    });
+  });
+
+  it('updates reminder settings without losing runtime state or stats', async () => {
+    const storageArea = new MemoryStorageArea();
+    const storage = new AppStorage(storageArea);
+    const state = {
+      stats: createEmptyStatsState(),
+      activeReadingTimeMs: 180_000,
+      isActiveReading: true,
+      nextEligibleReminderAt: 999_000,
+      settings: {
+        reminderIntervalMinutes: 20,
+        audioEnabled: true,
+        fullscreenReminder: true
+      }
+    } as PersistedState;
+
+    await storage.saveState(state);
+    await storage.saveSettings({
+      reminderIntervalMinutes: 30,
+      audioEnabled: false,
+      fullscreenReminder: false
+    });
+
+    await expect(storage.loadState()).resolves.toEqual({
+      ...state,
+      settings: {
+        reminderIntervalMinutes: 30,
+        audioEnabled: false,
+        fullscreenReminder: false
+      }
     });
   });
 });

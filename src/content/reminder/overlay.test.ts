@@ -44,4 +44,24 @@ describe('ReminderOverlay', () => {
     button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await dismissed;
   });
+
+  it('can render a compact reminder without blocking page scroll', async () => {
+    document.body.innerHTML = '';
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+
+    const overlay = new ReminderOverlay(document);
+    const dismissed = overlay.show('请休息一下', 'reminder', 'compact');
+    const root = document.getElementById('weread-eye-care-overlay') as HTMLDivElement;
+    const button = root.querySelector('button');
+
+    expect(root.style.inset).toBe('auto 24px 24px auto');
+    expect(root.style.background).toBe('transparent');
+    expect(document.documentElement.style.overflow).toBe('');
+    expect(document.body.style.overflow).toBe('');
+    expect(overlay.isBlockingReminderVisible()).toBe(false);
+
+    button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    await dismissed;
+  });
 });

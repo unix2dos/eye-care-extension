@@ -3,13 +3,24 @@ export const DEFAULT_REMINDER_AUDIO_PATH = 'audio/reminder.m4a';
 export interface ReminderAudioDebugInfo {
   sourceUrl: string;
   playbackKind: 'bundled-audio';
-  status: 'played' | 'play-failed';
+  status: 'played' | 'play-failed' | 'disabled';
   errorMessage: string | null;
 }
 
 interface ReminderAudioDeps {
   getAssetUrl?: (path: string) => string;
   createAudio?: (src: string) => HTMLAudioElement;
+}
+
+export function createDisabledReminderAudioDebugInfo(
+  getAssetUrl: (path: string) => string = (path) => chrome.runtime.getURL(path)
+): ReminderAudioDebugInfo {
+  return {
+    sourceUrl: getAssetUrl(DEFAULT_REMINDER_AUDIO_PATH),
+    playbackKind: 'bundled-audio',
+    status: 'disabled',
+    errorMessage: null
+  };
 }
 
 export function createReminderAudioPlayer({

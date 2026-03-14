@@ -63,28 +63,37 @@ function ensureOverlayElement(doc: Document): HTMLDivElement {
 }
 
 export type ReminderOverlayMode = 'preview' | 'reminder';
+export type ReminderOverlayPresentation = 'fullscreen' | 'compact';
 
 export class ReminderOverlay {
   private readonly doc: Document;
   private readonly element: HTMLDivElement;
+  private readonly panelElement: HTMLDivElement;
   private readonly messageElement: HTMLDivElement;
   private readonly dismissButton: HTMLButtonElement;
   private dismissPromise: Promise<void> | null = null;
   private resolveDismiss: (() => void) | null = null;
   private activeMode: ReminderOverlayMode | null = null;
+  private activePresentation: ReminderOverlayPresentation | null = null;
   private previousHtmlOverflow = '';
   private previousBodyOverflow = '';
 
   constructor(doc: Document) {
     this.doc = doc;
     this.element = ensureOverlayElement(doc);
+    const panelElement = this.element.firstElementChild;
     const messageElement = this.element.querySelector('[data-role="message"]');
     const dismissButton = this.element.querySelector('[data-role="dismiss"]');
 
-    if (!(messageElement instanceof HTMLDivElement) || !(dismissButton instanceof HTMLButtonElement)) {
+    if (
+      !(panelElement instanceof HTMLDivElement) ||
+      !(messageElement instanceof HTMLDivElement) ||
+      !(dismissButton instanceof HTMLButtonElement)
+    ) {
       throw new Error('Reminder overlay structure is incomplete.');
     }
 
+    this.panelElement = panelElement;
     this.messageElement = messageElement;
     this.dismissButton = dismissButton;
     this.dismissButton.addEventListener('click', () => {
@@ -92,14 +101,50 @@ export class ReminderOverlay {
     });
   }
 
-  show(message: string, mode: ReminderOverlayMode = 'reminder'): Promise<void> {
-    this.activeMode = mode;
-    this.messageElement.textContent = message;
-    this.previousHtmlOverflow = this.doc.documentElement.style.overflow;
-    this.previousBodyOverflow = this.doc.body.style.overflow;
-    this.doc.documentElement.style.overflow = 'hidden';
-    this.doc.body.style.overflow = 'hidden';
+  private applyPresentation(presentation: ReminderOverlayPresentation): void {
+    if (presentation === 'compact') {
+      this.element.style.inset = 'auto 24px 24px auto';
+      this.element.style.padding = '0';
+      this.element.style.background = 'transparent';
+      this.element.style.display = 'block';
+      this.element.style.width = 'min(360px, calc(100vw - 48px))';
+      this.panelElement.style.width = '100%';
+      this.panelElement.style.padding = '20px 20px 18px';
+      this.panelElement.style.borderRadius = '18px';
+      this.messageElement.style.fontSize = '22px';
+      this.messageElement.style.marginBottom = '18px';
+      return;
+    }
+
+    this.element.style.inset = '0';
+    this.element.style.padding = '32px';
+    this.element.style.background = 'rgba(14, 16, 19, 0.94)';
     this.element.style.display = 'flex';
+    this.element.style.width = '';
+    this.panelElement.style.width = 'min(560px, 100%)';
+    this.panelElement.style.padding = '32px 28px';
+    this.panelElement.style.borderRadius = '24px';
+    this.messageElement.style.fontSize = '28px';
+    this.messageElement.style.marginBottom = '24px';
+  }
+
+  show(
+    message: string,
+    mode: ReminderOverlayMode = 'reminder',
+    presentation: ReminderOverlayPresentation = 'fullscreen'
+  ): Promise<void> {
+    this.activeMode = mode;
+    this.activePresentation = presentation;
+    this.messageElement.textContent = message;
+    this.applyPresentation(presentation);
+
+    if (presentation === 'fullscreen') {
+      this.previousHtmlOverflow = this.doc.documentElement.style.overflow;
+      this.previousBodyOverflow = this.doc.body.style.overflow;
+      this.doc.documentElement.style.overflow = 'hidden';
+      this.doc.body.style.overflow = 'hidden';
+    }
+
     this.dismissButton.focus();
 
     if (!this.dismissPromise) {
@@ -113,6 +158,7 @@ export class ReminderOverlay {
 
   hide(): void {
     this.activeMode = null;
+    this.activePresentation = null;
     this.element.style.display = 'none';
     this.doc.documentElement.style.overflow = this.previousHtmlOverflow;
     this.doc.body.style.overflow = this.previousBodyOverflow;
@@ -124,6 +170,14 @@ export class ReminderOverlay {
   }
 
   isBlockingReminderVisible(): boolean {
-    return this.element.style.display !== 'none' && this.activeMode === 'reminder';
+    return (
+      this.element.style.display !== 'none' &&
+      this.activeMode === 'reminder' &&
+      this.activePresentation === 'fullscreen'
+    );
+  }
+
+  isVisible(): boolean {
+    return this.element.style.display !== 'none';
   }
 }
