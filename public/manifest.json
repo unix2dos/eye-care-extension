@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "WeRead Eye Care",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Active-reading break reminders for WeRead.",
   "permissions": ["storage"],
   "host_permissions": ["https://weread.qq.com/*"],
