@@ -1,11 +1,11 @@
 import { AppStorage } from '../shared/storage';
 import { buildReminderStatusSummary, buildStatsSummary } from '../ui/summary';
 import {
-  PREVIEW_DISABLED_HINT,
   PREVIEW_REMINDER_COMMAND,
   buildPreviewReminderState
 } from './preview';
 import { bindPopupActions } from './actions';
+import { derivePopupRuntimeState } from './live-status';
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -20,7 +20,6 @@ async function render(): Promise<void> {
   const storage = new AppStorage();
   const state = await storage.loadState();
   const summary = buildStatsSummary(state.stats, today());
-  const status = buildReminderStatusSummary(state, Date.now());
   const activeTab = await getActiveTab();
   const previewState = buildPreviewReminderState(activeTab);
   const app = document.getElementById('app');
@@ -29,6 +28,22 @@ async function render(): Promise<void> {
     return;
   }
 
+  const popupOpenedAt = Date.now();
+  const updateStatus = () => {
+    const liveState = derivePopupRuntimeState(state, popupOpenedAt, Date.now());
+    const status = buildReminderStatusSummary(liveState, Date.now());
+    const readingStatusNode = document.getElementById('reading-status-value');
+    const nextReminderNode = document.getElementById('next-reminder-value');
+
+    if (readingStatusNode) {
+      readingStatusNode.textContent = previewState.enabled ? status.readingStatusLabel : '已暂停 · 0分00秒';
+    }
+
+    if (nextReminderNode) {
+      nextReminderNode.textContent = previewState.enabled ? status.nextEligibleReminderLabel : '等待开始阅读';
+    }
+  };
+
   app.innerHTML = `
     <section class="panel">
       <h1>微信读书护眼</h1>
@@ -36,17 +51,18 @@ async function render(): Promise<void> {
       <div class="grid">
         <div class="metric"><span>今日阅读</span><strong>${summary.todayReadingMinutes} 分钟</strong></div>
         <div class="metric"><span>今日提醒</span><strong>${summary.todayReminderCount} 次</strong></div>
-        <div class="metric"><span>阅读状态</span><strong>${previewState.enabled ? status.readingStatusLabel : '已暂停 · 0分00秒'}</strong></div>
-        <div class="metric"><span>下次提醒</span><strong>${previewState.enabled ? status.nextEligibleReminderLabel : '等待开始阅读'}</strong></div>
+        <div class="metric"><span>阅读状态</span><strong id="reading-status-value"></strong></div>
+        <div class="metric"><span>下次提醒</span><strong id="next-reminder-value"></strong></div>
       </div>
-      <div style="margin-top: 14px;">
+      <div class="actions">
         <button id="preview-reminder" ${previewState.enabled ? '' : 'disabled'}>预览提醒</button>
-        <button id="open-settings" class="secondary" style="margin-left: 10px;">提醒设置</button>
+        <button id="open-settings" class="secondary">提醒设置</button>
       </div>
-      <div class="hint">${previewState.hint ?? '在当前阅读页直接预览真实提醒效果。'}</div>
-      <div class="hint">默认会用语音提醒你休息一下。</div>
     </section>
   `;
+
+  updateStatus();
+  window.setInterval(updateStatus, 1_000);
 
   bindPopupActions({
     root: document,
