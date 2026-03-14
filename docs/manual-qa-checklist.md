@@ -43,7 +43,7 @@ npm run build
 验收标准：
 
 - 非微信读书页时，`预览提醒` 按钮置灰
-- 非微信读书页时，popup 的阅读状态显示 `已暂停计时（本轮计时 0 分钟）`
+- 非微信读书页时，popup 的阅读状态显示 `已暂停 · 0 分钟`
 - 微信读书阅读页时，`预览提醒` 按钮可用
 
 ## 4. 预览提醒
@@ -55,7 +55,7 @@ npm run build
 
 - 当前阅读页出现全屏提醒遮罩
 - 底层页面不能继续点击或滚动
-- 会尝试播报 `TTS`
+- 会播放扩展内置固定语音
 - 预览不会自动消失
 - 必须点击 `我知道了` 才会关闭
 - 今日提醒次数不增加
@@ -70,7 +70,7 @@ npm run build
 
 验收标准：
 
-- 阅读状态显示 `正在计时（本轮计时 X 分钟）`
+- 阅读状态显示 `计时中 · X 分钟`
 - 下次提醒显示一个具体时间
 - 今日阅读时长会逐步增加
 
@@ -82,7 +82,7 @@ npm run build
 
 验收标准：
 
-- 阅读状态变为 `已暂停计时（本轮计时 X 分钟）`
+- 阅读状态变为 `已暂停 · X 分钟`
 - 下次提醒显示 `等待开始阅读`
 - 不应继续累计阅读时间
 
@@ -110,9 +110,9 @@ npm run build
 - 切走期间不累计
 - 回来继续读满第二个 `10 分钟` 后触发提醒
 
-## 9. TTS 失败时的退化
+## 9. 固定音频失败时的退化
 
-如果你能方便制造 `speechSynthesis` 不可用的场景，执行：
+如果你能方便制造音频播放失败的场景，执行：
 
 1. 打开微信读书阅读页
 2. 触发一次预览提醒，或等待真实提醒
@@ -120,29 +120,26 @@ npm run build
 验收标准：
 
 - 页面全屏提醒仍会出现
-- 不会自动退回到普通提示音
-- 扩展不会因为 TTS 失败而报错或停止计时
+- 不会自动退回到系统 `TTS`
+- 扩展不会因为音频失败而报错或停止计时
 
-## 10. TTS Voice 选择
+## 10. 固定音频播放状态
 
 1. 打开微信读书阅读页
 2. 点击 `预览提醒`
 3. 在页面 DevTools Console 中检查：
 
 ```js
-document.documentElement.dataset.wereadEyeCarePreferredVoiceName
-document.documentElement.dataset.wereadEyeCareSelectedVoiceName
-document.documentElement.dataset.wereadEyeCareSelectedVoiceLang
-document.documentElement.dataset.wereadEyeCareVoiceSelectionKind
-document.documentElement.dataset.wereadEyeCareVoiceFallbackUsed
+document.documentElement.dataset.wereadEyeCareReminderAudioPath
+document.documentElement.dataset.wereadEyeCareReminderAudioStatus
+document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
 ```
 
 验收标准：
 
-- 首选 voice 为 `Eddy（中文·中国大陆）`
-- 如果浏览器里存在这个 voice，`SelectedVoiceName` 应对应 `Eddy`
-- 如果它不存在，`SelectedVoiceLang` 仍应是 `zh-CN`
-- `SelectionKind` 应能区分是首选命中还是 fallback
+- `ReminderAudioPath` 指向 `audio/reminder.m4a`
+- 正常播放时，`ReminderAudioStatus` 为 `played`
+- 播放失败时，`ReminderAudioErrorMessage` 会留下错误文本
 ## 11. Options 状态页
 
 1. 打开扩展选项页
@@ -197,4 +194,4 @@ document.documentElement.dataset.wereadEyeCareVoiceFallbackUsed
 - popup 的下次提醒时间是否和实际累计节奏一致
 - 页面隐藏或切标签页后是否真的暂停
 - 预览提醒是否误计入真实提醒次数
-- TTS 在你的 Chrome 环境里是否稳定播报普通话
+- 固定音频在你的 Chrome 环境里是否稳定播放

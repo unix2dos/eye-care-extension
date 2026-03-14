@@ -38,7 +38,7 @@ describe('buildStatsSummary', () => {
     const summary = buildReminderStatusSummary(state, new Date('2026-03-13T14:30:00+08:00').getTime());
 
     expect(summary).toEqual({
-      readingStatusLabel: '正在计时（本轮计时 10 分钟）',
+      readingStatusLabel: '计时中 · 10 分钟',
       nextEligibleReminderLabel: '14:32'
     });
   });
@@ -54,7 +54,7 @@ describe('buildStatsSummary', () => {
     const summary = buildReminderStatusSummary(state, new Date('2026-03-13T14:30:00+08:00').getTime());
 
     expect(summary).toEqual({
-      readingStatusLabel: '已暂停计时（本轮计时 12 分钟）',
+      readingStatusLabel: '已暂停 · 12 分钟',
       nextEligibleReminderLabel: '等待开始阅读'
     });
   });

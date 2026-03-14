@@ -8,16 +8,16 @@ export interface OverlayLike {
 
 export interface PreviewReminderRunnerDeps {
   overlay: OverlayLike;
-  speakReminder: (text: string) => Promise<unknown>;
+  playReminder: () => Promise<unknown>;
 }
 
 export function createPreviewReminderRunner({
   overlay,
-  speakReminder
+  playReminder
 }: PreviewReminderRunnerDeps): () => Promise<void> {
   return async () => {
     const dismissed = overlay.show(PREVIEW_REMINDER_MESSAGE, 'preview');
-    await speakReminder(PREVIEW_REMINDER_MESSAGE).catch(() => undefined);
+    await playReminder().catch(() => undefined);
     await dismissed;
   };
 }

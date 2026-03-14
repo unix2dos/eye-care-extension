@@ -13,11 +13,11 @@ describe('createPreviewReminderRunner', () => {
           })
       )
     };
-    const speakReminder = vi.fn().mockResolvedValue(undefined);
+    const playReminder = vi.fn().mockResolvedValue(undefined);
 
     const previewReminder = createPreviewReminderRunner({
       overlay,
-      speakReminder
+      playReminder
     });
 
     let completed = false;
@@ -28,7 +28,7 @@ describe('createPreviewReminderRunner', () => {
     await Promise.resolve();
 
     expect(overlay.show).toHaveBeenCalledWith(PREVIEW_REMINDER_MESSAGE, 'preview');
-    expect(speakReminder).toHaveBeenCalledWith(PREVIEW_REMINDER_MESSAGE);
+    expect(playReminder).toHaveBeenCalledTimes(1);
     expect(completed).toBe(false);
 
     const dismiss = resolveDismiss as unknown as () => void;

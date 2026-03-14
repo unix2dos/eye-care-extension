@@ -26,4 +26,22 @@ describe('manifest', () => {
 
     expect(hasLegacyVisionResource ?? false).toBe(false);
   });
+
+  it('exposes the bundled reminder audio to the WeRead page', () => {
+    const resources = (
+      manifest as typeof manifest & {
+        web_accessible_resources?: Array<{
+          matches?: string[];
+          resources?: string[];
+        }>;
+      }
+    ).web_accessible_resources;
+
+    const hasReminderAudioResource = resources?.some(
+      (entry) =>
+        entry.matches?.includes('https://weread.qq.com/*') && (entry.resources?.includes('audio/reminder.m4a') ?? false)
+    );
+
+    expect(hasReminderAudioResource ?? false).toBe(true);
+  });
 });

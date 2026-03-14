@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "WeRead Eye Care",
   "version": "0.1.0",
-  "description": "Active-reading TTS reminders for WeRead.",
+  "description": "Active-reading break reminders for WeRead.",
   "permissions": ["storage"],
   "host_permissions": ["https://weread.qq.com/*"],
   "icons": {
@@ -19,6 +19,12 @@
     {
       "matches": ["https://weread.qq.com/web/reader/*"],
       "js": ["content/main.js"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["audio/reminder.m4a"],
+      "matches": ["https://weread.qq.com/*"]
     }
   ],
   "action": {

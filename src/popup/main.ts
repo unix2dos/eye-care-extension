@@ -35,7 +35,7 @@ async function render(): Promise<void> {
       <div class="grid">
         <div class="metric"><span>今日阅读</span><strong>${summary.todayReadingMinutes} 分钟</strong></div>
         <div class="metric"><span>今日提醒</span><strong>${summary.todayReminderCount} 次</strong></div>
-        <div class="metric"><span>阅读状态</span><strong>${previewState.enabled ? status.readingStatusLabel : '已暂停计时（本轮计时 0 分钟）'}</strong></div>
+        <div class="metric"><span>阅读状态</span><strong>${previewState.enabled ? status.readingStatusLabel : '已暂停 · 0 分钟'}</strong></div>
         <div class="metric"><span>下次提醒</span><strong>${previewState.enabled ? status.nextEligibleReminderLabel : '等待开始阅读'}</strong></div>
       </div>
       <div style="margin-top: 14px;">

@@ -38,7 +38,7 @@ V1 只支持：
    按累计的活跃阅读时间触发提醒，当前默认是每 `20 分钟` 一次。
 
 4. `提醒展示`
-   在页面里显示全屏遮罩，并使用浏览器 `TTS` 播报固定文案。
+   在页面里显示全屏遮罩，并播放扩展内置固定语音。
 
 ### 2.2 什么叫“活跃阅读”
 
@@ -80,7 +80,7 @@ V1 只支持：
 提醒触发后会发生两件事：
 
 1. 微信读书页面出现全屏提醒遮罩
-2. 浏览器用 `TTS` 播报固定文案
+2. 扩展播放内置固定语音
 
 当前默认文案是：
 
@@ -94,20 +94,14 @@ V1 只支持：
 
 提醒才会关闭。
 
-### 2.5 如果 TTS 失败怎么办
+### 2.5 如果固定音频播放失败怎么办
 
-当前版本把 `TTS` 当作默认提醒方式。
+当前版本把扩展内置音频当作默认提醒方式。
 
-语音选择策略是：
-
-- 优先使用 `Eddy（中文·中国大陆）`
-- 如果当前浏览器里没有它，再退回到其他 `大陆普通话 voice`
-- 不主动优先使用 `zh-TW` 或 `zh-HK` voice
-
-如果浏览器当前不能正常播报语音：
+如果浏览器当前不能正常播放这段音频：
 
 - 页面全屏提醒仍然会出现
-- 不会自动退回到普通提示音
+- 不会自动退回到系统 `TTS`
 - 下一轮提醒计时不受影响
 
 ### 2.6 Popup 和 Options 会显示什么
@@ -122,8 +116,8 @@ V1 只支持：
 
 其中：
 
-- 活跃阅读中会显示 `正在计时（本轮计时 X 分钟）`
-- 当前不在活跃阅读态时显示 `已暂停计时（本轮计时 X 分钟）`
+- 活跃阅读中会显示 `计时中 · X 分钟`
+- 当前不在活跃阅读态时显示 `已暂停 · X 分钟`
 - 活跃阅读中会显示预计达到下一个提醒节点的时间
 - 当前不在活跃阅读态时显示 `等待开始阅读`
 - 已经达到提醒点时显示 `可立即触发`
@@ -145,7 +139,7 @@ V1 只支持：
 
 - 当活动标签页是微信读书阅读页时，`popup` 会启用 `预览提醒`
 - 点击后，会在当前阅读页里弹出真实提醒遮罩
-- 同时会走当前默认提醒方式，也就是 `TTS`
+- 同时会播放当前默认的内置固定语音
 - 预览不会计入提醒次数，也不会改变下次提醒时间
 - 预览也必须手动点击 `我知道了` 才会关闭
 
@@ -259,7 +253,7 @@ npm run build
 - 只支持微信读书阅读页，不支持其他网页
 - 不支持系统级全局提醒
 - 当前没有多设备同步
-- 当前没有自定义 TTS 文案
+- 当前没有自定义提醒音频
 - 当前没有多种提醒节奏
 
 ## 8. 常见问题
@@ -273,7 +267,7 @@ npm run build
 - 最近 `3 分钟` 没有任何阅读操作，扩展暂停累计
 - 实际累计到的活跃阅读时间还不到 `20 分钟`
 
-### 8.2 为什么 popup 里显示“已暂停计时（本轮计时 X 分钟）”
+### 8.2 为什么 popup 里显示“已暂停 · X 分钟”
 
 这表示当前不在活跃阅读态。
 
@@ -289,29 +283,26 @@ npm run build
 
 ### 8.3 为什么页面有浮层但没有语音
 
-说明提醒已经触发，但浏览器当前没有正常播报 `TTS`。
+说明提醒已经触发，但浏览器当前没有正常播放扩展内置音频。
 
 当前实现下：
 
-- 不会自动改成提示音
+- 不会自动改成系统 `TTS`
 - 仍然会显示全屏提醒
 
-优先检查浏览器对语音播报的支持情况，再重试。
+优先检查浏览器对页面音频播放的支持情况，再重试。
 
-### 8.4 如何确认当前实际使用了哪个 voice
+### 8.4 如何确认固定音频有没有成功触发
 
-每次语音播报后，扩展都会把当前选择结果写到页面根节点的 `dataset` 里，方便手工验收。
+每次提醒播放后，扩展都会把当前固定音频的结果写到页面根节点的 `dataset` 里，方便手工验收。
 
 你可以在微信读书页面的 DevTools Console 里查看：
 
 ```js
-document.documentElement.dataset.wereadEyeCareSelectedVoiceName
-document.documentElement.dataset.wereadEyeCareSelectedVoiceLang
-document.documentElement.dataset.wereadEyeCareVoiceSelectionKind
-document.documentElement.dataset.wereadEyeCareVoiceFallbackUsed
+document.documentElement.dataset.wereadEyeCareReminderAudioPath
+document.documentElement.dataset.wereadEyeCareReminderAudioStatus
+document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
 ```
-
-如果发生了从 `Eddy（中文·中国大陆）` 到其他大陆普通话 voice 的降级，这里也会直接反映出来。
 
 ## 9. 代码入口
 
@@ -320,7 +311,7 @@ document.documentElement.dataset.wereadEyeCareVoiceFallbackUsed
 - 运行时主入口：`src/content/main.ts`
 - 活跃阅读态：`src/content/activity/session.ts`
 - 提醒调度：`src/content/runtime/scheduler.ts`
-- TTS 提醒：`src/content/reminder/tts.ts`
+- 固定音频提醒：`src/content/reminder/audio.ts`
 - 全屏提醒遮罩：`src/content/reminder/overlay.ts`
 - 微信读书适配：`src/content/weread/adapter.ts`
 - 本地统计与存储：`src/shared/stats.ts` 和 `src/shared/storage.ts`

@@ -4,8 +4,9 @@ import { recordReadingSample, recordReminderTriggered } from '../shared/stats';
 import type { PersistedState, StatsState } from '../shared/types';
 import { ActiveReadingSession } from './activity/session';
 import { createPreviewReminderRunner } from './preview';
+import { createReminderAudioPlayer, type ReminderAudioDebugInfo } from './reminder/audio';
 import { ReminderOverlay } from './reminder/overlay';
-import { DEFAULT_REMINDER_SPEECH, type ReminderSpeechDebugInfo, speakReminderText } from './reminder/tts';
+import { DEFAULT_REMINDER_SPEECH } from './reminder/tts';
 import { ActiveReadingReminderScheduler } from './runtime/scheduler';
 import { getWeReadBookTitle, isSupportedWeReadUrl } from './weread/adapter';
 
@@ -31,6 +32,7 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
     DEFAULT_POLICY.reminderIntervalMs,
     persisted.activeReadingTimeMs
   );
+  const playReminderAudio = createReminderAudioPlayer();
 
   let stats: StatsState = persisted.stats;
   let nextEligibleReminderAt: number | null = persisted.nextEligibleReminderAt;
@@ -78,24 +80,21 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
     return schedule;
   };
 
-  const recordSpeechDebug = (debugInfo: ReminderSpeechDebugInfo) => {
-    doc.documentElement.dataset.wereadEyeCarePreferredVoiceName = debugInfo.preferredVoiceName;
-    doc.documentElement.dataset.wereadEyeCareSelectedVoiceName = debugInfo.selectedVoiceName ?? '';
-    doc.documentElement.dataset.wereadEyeCareSelectedVoiceLang = debugInfo.selectedVoiceLang ?? '';
-    doc.documentElement.dataset.wereadEyeCareVoiceSelectionKind = debugInfo.selectionKind;
-    doc.documentElement.dataset.wereadEyeCareVoiceFallbackUsed = String(debugInfo.fallbackUsed);
-    doc.documentElement.dataset.wereadEyeCareVoiceErrorMessage = debugInfo.errorMessage ?? '';
+  const recordReminderAudioDebug = (debugInfo: ReminderAudioDebugInfo) => {
+    doc.documentElement.dataset.wereadEyeCareReminderAudioPath = debugInfo.sourceUrl;
+    doc.documentElement.dataset.wereadEyeCareReminderAudioStatus = debugInfo.status;
+    doc.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage = debugInfo.errorMessage ?? '';
   };
 
-  const speakReminder = async (message: string) => {
-    const debugInfo = await speakReminderText(message);
-    recordSpeechDebug(debugInfo);
+  const playReminder = async () => {
+    const debugInfo = await playReminderAudio();
+    recordReminderAudioDebug(debugInfo);
     return debugInfo;
   };
 
   const triggerReminder = async () => {
     const dismissed = overlay.show(DEFAULT_REMINDER_SPEECH, 'reminder');
-    await speakReminder(DEFAULT_REMINDER_SPEECH);
+    await playReminder();
     await dismissed;
   };
 
@@ -119,7 +118,7 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
 
   const previewReminder = createPreviewReminderRunner({
     overlay,
-    speakReminder
+    playReminder
   });
 
   chrome.runtime.onMessage.addListener((message) => {

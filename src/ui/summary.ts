@@ -37,9 +37,9 @@ function formatActiveReadingMinutes(activeReadingTimeMs: number): number {
 
 function buildReadingStatusLabel(isActiveReading: boolean, activeReadingTimeMs: number): string {
   const minutes = formatActiveReadingMinutes(activeReadingTimeMs);
-  const prefix = isActiveReading ? '正在计时' : '已暂停计时';
+  const prefix = isActiveReading ? '计时中' : '已暂停';
 
-  return `${prefix}（本轮计时 ${minutes} 分钟）`;
+  return `${prefix} · ${minutes} 分钟`;
 }
 
 export function buildReminderStatusSummary(state: PersistedState, now: number): ReminderStatusSummary {
