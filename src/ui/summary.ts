@@ -31,12 +31,24 @@ function formatNextEligibleReminder(nextEligibleReminderAt: number): string {
   }).format(new Date(nextEligibleReminderAt));
 }
 
+function formatActiveReadingMinutes(activeReadingTimeMs: number): number {
+  return Math.max(0, Math.floor(activeReadingTimeMs / 60_000));
+}
+
+function buildReadingStatusLabel(isActiveReading: boolean, activeReadingTimeMs: number): string {
+  const minutes = formatActiveReadingMinutes(activeReadingTimeMs);
+  const prefix = isActiveReading ? '正在计时' : '已暂停计时';
+
+  return `${prefix}（本轮计时 ${minutes} 分钟）`;
+}
+
 export function buildReminderStatusSummary(state: PersistedState, now: number): ReminderStatusSummary {
   const isActiveReading = state.isActiveReading ?? false;
   const nextEligibleReminderAt = state.nextEligibleReminderAt;
+  const activeReadingTimeMs = state.activeReadingTimeMs ?? 0;
 
   return {
-    readingStatusLabel: isActiveReading ? '正在计时' : '已暂停计时',
+    readingStatusLabel: buildReadingStatusLabel(isActiveReading, activeReadingTimeMs),
     nextEligibleReminderLabel: !isActiveReading
       ? '等待开始阅读'
       : nextEligibleReminderAt !== null && nextEligibleReminderAt > now

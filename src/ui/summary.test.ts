@@ -38,7 +38,7 @@ describe('buildStatsSummary', () => {
     const summary = buildReminderStatusSummary(state, new Date('2026-03-13T14:30:00+08:00').getTime());
 
     expect(summary).toEqual({
-      readingStatusLabel: '正在计时',
+      readingStatusLabel: '正在计时（本轮计时 10 分钟）',
       nextEligibleReminderLabel: '14:32'
     });
   });
@@ -46,7 +46,7 @@ describe('buildStatsSummary', () => {
   it('shows waiting to start reading when the session is inactive', () => {
     const state = {
       stats: createEmptyStatsState(),
-      activeReadingTimeMs: 0,
+      activeReadingTimeMs: 12 * 60_000,
       isActiveReading: false,
       nextEligibleReminderAt: null
     } as PersistedState;
@@ -54,7 +54,7 @@ describe('buildStatsSummary', () => {
     const summary = buildReminderStatusSummary(state, new Date('2026-03-13T14:30:00+08:00').getTime());
 
     expect(summary).toEqual({
-      readingStatusLabel: '已暂停计时',
+      readingStatusLabel: '已暂停计时（本轮计时 12 分钟）',
       nextEligibleReminderLabel: '等待开始阅读'
     });
   });
