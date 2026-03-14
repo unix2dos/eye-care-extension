@@ -25,7 +25,7 @@ describe('buildOptionsViewModel', () => {
     const viewModel = buildOptionsViewModel(state, '2026-03-13', new Date('2026-03-13T14:30:00+08:00').getTime());
 
     expect(viewModel).toEqual({
-      readingStatusLabel: '正在累计阅读',
+      readingStatusLabel: '正在计时',
       nextReminderLabel: '14:32',
       summary: {
         todayReadingMinutes: 5,
@@ -44,7 +44,7 @@ describe('buildOptionsViewModel', () => {
 
     const viewModel = buildOptionsViewModel(state, '2026-03-13');
 
-    expect(viewModel.readingStatusLabel).toBe('等待开始阅读');
+    expect(viewModel.readingStatusLabel).toBe('已暂停计时');
     expect(viewModel.nextReminderLabel).toBe('等待开始阅读');
   });
 });

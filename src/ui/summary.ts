@@ -36,7 +36,7 @@ export function buildReminderStatusSummary(state: PersistedState, now: number): 
   const nextEligibleReminderAt = state.nextEligibleReminderAt;
 
   return {
-    readingStatusLabel: isActiveReading ? '正在累计阅读' : '等待开始阅读',
+    readingStatusLabel: isActiveReading ? '正在计时' : '已暂停计时',
     nextEligibleReminderLabel: !isActiveReading
       ? '等待开始阅读'
       : nextEligibleReminderAt !== null && nextEligibleReminderAt > now
