@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1280, initial-scale=1.0" />
+    <title>WeRead Eye Care - Settings</title>
+    <style>
+  * { box-sizing: border-box; }
+  html, body {
+    width: 1280px;
+    height: 800px;
+    margin: 0;
+    overflow: hidden;
+    background: #f7f1e7;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    color: #201914;
+  }
+  body {
+    background:
+      radial-gradient(circle at top left, rgba(233, 139, 86, 0.14), transparent 32%),
+      radial-gradient(circle at top right, rgba(83, 144, 114, 0.18), transparent 30%),
+      linear-gradient(180deg, #f7f1e7 0%, #fffaf2 100%);
+  }
+  .canvas {
+    width: 1280px;
+    height: 800px;
+    padding: 52px 56px;
+    display: grid;
+    grid-template-columns: 1.02fr 0.98fr;
+    gap: 36px;
+  }
+  .story {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 20px;
+  }
+  .eyebrow {
+    display: inline-flex;
+    width: fit-content;
+    padding: 10px 16px;
+    border-radius: 999px;
+    background: rgba(45, 106, 79, 0.12);
+    color: #2d6a4f;
+    font-size: 16px;
+    font-weight: 700;
+  }
+  h1 {
+    margin: 0;
+    font-size: 54px;
+    line-height: 1.08;
+    letter-spacing: -0.03em;
+  }
+  .subtitle {
+    max-width: 520px;
+    font-size: 24px;
+    line-height: 1.5;
+    color: #5f5143;
+  }
+  .bullets {
+    display: grid;
+    gap: 12px;
+    margin-top: 6px;
+  }
+  .bullet {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 20px;
+    color: #3c342b;
+  }
+  .bullet::before {
+    content: "";
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    background: #2d6a4f;
+    flex: 0 0 auto;
+  }
+  .visual-shell {
+    align-self: center;
+    width: 100%;
+    min-height: 680px;
+    border-radius: 34px;
+    padding: 22px;
+    background: rgba(255, 255, 255, 0.68);
+    box-shadow: 0 24px 70px rgba(125, 96, 56, 0.18);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+  }
+  .panel-card {
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 16px 50px rgba(124, 95, 57, 0.13);
+    padding: 24px;
+  }
+  .metrics {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .metric {
+    border-radius: 18px;
+    background: #fff7ec;
+    padding: 16px;
+  }
+  .metric-label {
+    font-size: 17px;
+    color: #5b4d41;
+    margin-bottom: 8px;
+  }
+  .metric-value {
+    font-size: 30px;
+    font-weight: 800;
+    line-height: 1.18;
+    color: #201914;
+  }
+  .button-stack {
+    display: grid;
+    gap: 12px;
+    margin-top: 18px;
+  }
+  .button-pill {
+    border-radius: 999px;
+    background: #2d6a4f;
+    color: #fff;
+    text-align: center;
+    padding: 14px 18px;
+    font-size: 20px;
+    font-weight: 700;
+  }
+  .button-pill.secondary {
+    background: #517c67;
+  }
+  .settings-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin: 22px 0 18px;
+  }
+  .setting-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-radius: 18px;
+    background: #fff8ee;
+    padding: 16px 18px;
+    font-size: 20px;
+  }
+  .setting-value {
+    color: #2d6a4f;
+    font-weight: 800;
+  }
+  .browser {
+    border-radius: 30px;
+    overflow: hidden;
+    background: #fffdf8;
+    box-shadow: 0 22px 60px rgba(111, 85, 47, 0.16);
+    border: 1px solid rgba(255,255,255,0.6);
+  }
+  .browser-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 18px;
+    background: #f3eee6;
+    border-bottom: 1px solid rgba(43,34,22,0.08);
+  }
+  .dot-row {
+    display: flex;
+    gap: 8px;
+  }
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 999px;
+    background: #d8cdbb;
+  }
+  .address-bar {
+    flex: 1;
+    height: 40px;
+    border-radius: 999px;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    padding: 0 18px;
+    font-size: 17px;
+    color: #8c7f70;
+  }
+  .page {
+    padding: 38px 42px 48px;
+    min-height: 560px;
+    background:
+      linear-gradient(180deg, rgba(250,245,237,0.92), rgba(250,245,237,0.98)),
+      linear-gradient(120deg, #f1e7d8, #fbf8f2);
+  }
+  .page-badge {
+    display: inline-flex;
+    padding: 8px 12px;
+    border-radius: 999px;
+    background: rgba(233, 139, 86, 0.12);
+    color: #7a4a2c;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .page-title {
+    margin: 18px 0 16px;
+    font-size: 42px;
+    line-height: 1.18;
+    letter-spacing: -0.02em;
+  }
+  .page-copy {
+    font-size: 21px;
+    line-height: 1.8;
+    color: #4b4035;
+  }
+  .overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(14, 16, 19, 0.94);
+    padding: 32px;
+  }
+  .overlay-card {
+    width: min(560px, 100%);
+    border-radius: 24px;
+    background: #f7f1e7;
+    color: #1d1c19;
+    padding: 34px 28px;
+    text-align: center;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.32);
+  }
+  .overlay-title {
+    font-size: 30px;
+    line-height: 1.45;
+    font-weight: 800;
+    margin-bottom: 24px;
+  }
+  .overlay-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 190px;
+    border-radius: 999px;
+    background: #1d1c19;
+    color: #f7f1e7;
+    padding: 14px 22px;
+    font-size: 19px;
+    font-weight: 700;
+  }
+  .toolbar-frame {
+    border-radius: 28px;
+    overflow: hidden;
+    background: #fbfaf7;
+    box-shadow: 0 22px 60px rgba(111, 85, 47, 0.16);
+  }
+  .toolbar-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px;
+    background: #f2ede5;
+    border-bottom: 1px solid rgba(43,34,22,0.08);
+  }
+  .toolbar-icons {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+  }
+  .tiny-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 10px;
+    background: #e6ddd0;
+  }
+  .action-icon {
+    position: relative;
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fff6e5, #f8e2bc);
+    border: 1px solid rgba(116, 88, 53, 0.18);
+    display: grid;
+    place-items: center;
+    box-shadow: 0 12px 24px rgba(113, 87, 48, 0.14);
+  }
+  .action-eye {
+    width: 20px;
+    height: 14px;
+    border-radius: 999px;
+    background: #20313d;
+    position: relative;
+  }
+  .action-eye::before {
+    content: "";
+    position: absolute;
+    inset: 3px 5px;
+    border-radius: 999px;
+    background: #fff8ee;
+  }
+  .action-eye::after {
+    content: "";
+    position: absolute;
+    inset: 5px 8px;
+    border-radius: 999px;
+    background: #20313d;
+  }
+  .badge-chip {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    min-width: 28px;
+    height: 22px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 8px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    box-shadow: 0 8px 16px rgba(0,0,0,0.18);
+  }
+  .toolbar-legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+    margin-top: 26px;
+  }
+  .legend-card {
+    border-radius: 20px;
+    background: #fff8ee;
+    padding: 18px;
+  }
+  .legend-head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 10px;
+  }
+  .legend-badge {
+    min-width: 58px;
+    height: 30px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 12px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #fff;
+  }
+  .legend-title {
+    font-size: 22px;
+    font-weight: 800;
+  }
+  .legend-copy {
+    font-size: 18px;
+    color: #5c4e40;
+    line-height: 1.6;
+  }
+</style>
+  </head>
+  <body>
+    <main class="canvas">
+      
+    <section class="story">
+      <div class="eyebrow">Settings</div>
+      <h1>Tune the reminder flow to your own pace</h1>
+      <div class="subtitle">Adjust the interval, voice playback, and full-screen reminders without leaving the extension.</div>
+      <div class="bullets">
+        <div class="bullet">15 / 20 / 30 minutes</div><div class="bullet">Built-in voice toggle</div><div class="bullet">Full-screen or compact mode</div>
+      </div>
+    </section>
+  
+      
+    <section class="visual-shell">
+      <div class="panel-card">
+        <div style="font-size: 34px; font-weight: 800; margin-bottom: 8px;">WeRead Eye Care</div>
+        <div style="font-size: 20px; color: #5b4d41;">Breaks are based on your active reading time.</div>
+        <div class="metrics">
+          
+                <div class="metric">
+                  <div class="metric-label">Today Reading</div>
+                  <div class="metric-value">37 min</div>
+                </div>
+              
+                <div class="metric">
+                  <div class="metric-label">Today Breaks</div>
+                  <div class="metric-value">2</div>
+                </div>
+              
+                <div class="metric">
+                  <div class="metric-label">Status</div>
+                  <div class="metric-value">Reading · 4m 10s</div>
+                </div>
+              
+                <div class="metric">
+                  <div class="metric-label">Next Break</div>
+                  <div class="metric-value">15m 48s</div>
+                </div>
+              
+        </div>
+        <div style="font-size: 24px; font-weight: 800; margin: 8px 0 12px;">Reminder Settings</div>
+        <div class="settings-grid">
+          
+                <div class="setting-row">
+                  <span>Interval</span>
+                  <span class="setting-value">20 min</span>
+                </div>
+              
+                <div class="setting-row">
+                  <span>Voice Reminder</span>
+                  <span class="setting-value">On</span>
+                </div>
+              
+                <div class="setting-row">
+                  <span>Full-screen Reminder</span>
+                  <span class="setting-value">On</span>
+                </div>
+              
+        </div>
+        <div style="display: flex; gap: 12px; margin-top: 22px;">
+          <div class="button-pill" style="flex: 1;">Export CSV</div>
+          <div class="button-pill secondary" style="flex: 1; background: #b45a5a;">Reset Local Data</div>
+        </div>
+      </div>
+    </section>
+  
+    </main>
+  </body>
+</html>

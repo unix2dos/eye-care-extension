@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "WeRead Eye Care"
+  },
+  "extDescription": {
+    "message": "A break reminder for WeRead Web that tracks active reading time, plays voice nudges, shows countdowns, and surfaces read or pause status."
+  },
+  "actionTitle": {
+    "message": "WeRead Eye Care"
+  }
+}

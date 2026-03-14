@@ -1,0 +1,11 @@
+{
+  "extName": {
+    "message": "微信读书护眼"
+  },
+  "extDescription": {
+    "message": "微信读书专用护眼提醒扩展。按活跃阅读时间提醒休息，支持语音、全屏提醒、倒计时和读停状态标记。"
+  },
+  "actionTitle": {
+    "message": "微信读书护眼"
+  }
+}
