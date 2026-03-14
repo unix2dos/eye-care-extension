@@ -23,15 +23,15 @@ npm run build
 - popup 可以打开
 - options 页面可以打开
 
-## 2. 不请求摄像头
+## 2. 无额外权限打扰
 
 1. 打开任意非微信读书页面
 2. 再打开微信读书阅读页 `https://weread.qq.com/web/reader/...`
-3. 观察整个过程中是否出现摄像头权限请求
+3. 观察整个过程中是否出现意外的权限请求或模式切换提示
 
 验收标准：
 
-- 不应出现摄像头权限请求
+- 不应出现额外权限请求
 - 不应出现视觉检测、校准或模式切换相关文案
 
 ## 3. 微信读书页面识别
@@ -154,7 +154,6 @@ document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
   - 下次提醒
   - 导出 CSV
 - 不再出现：
-  - 摄像头
   - 视觉检测
   - 校准
   - 策略切换
@@ -185,7 +184,7 @@ document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
   - `bookTitle`
   - `readingMinutes`
   - `reminderCount`
-- 不包含摄像头、眨眼率或恢复效果相关字段
+- 不包含眨眼率或恢复效果相关字段
 
 ## 14. 回归关注点
 
