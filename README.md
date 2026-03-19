@@ -1,10 +1,16 @@
-# WeRead Eye Care
+<!-- # WeRead Eye Care -->
 
 一个面向 `微信读书 Web` 的 Chrome 护眼提醒扩展。
 
 WeRead Eye Care is a focused Chrome extension for WeRead Web. It tracks active reading time, triggers local break reminders, and keeps all settings and stats inside the current browser profile.
 
 ![WeRead Eye Care popup overview](docs/store/images/zh/01-popup.png)
+
+
+
+下载地址： https://chromewebstore.google.com/detail/weread-eye-care/ikcfjpodlbbmcemmbhokoenehlkhdegh
+
+
 
 ## 概览
 
