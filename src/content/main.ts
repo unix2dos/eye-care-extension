@@ -1,8 +1,7 @@
 import { DEFAULT_POLICY, DEFAULT_REMINDER_SETTINGS } from '../shared/constants';
-import { REQUEST_RUNTIME_STATUS_COMMAND, TOOLBAR_ICON_STATE_COMMAND } from '../shared/messages';
+import { TOOLBAR_ICON_STATE_COMMAND } from '../shared/messages';
 import { AppStorage, STORAGE_KEY } from '../shared/storage';
-import { recordReadingSample, recordReminderTriggered } from '../shared/stats';
-import type { PersistedState, ReminderSettings, RuntimeStatusSnapshot, StatsState } from '../shared/types';
+import type { ReminderSettings } from '../shared/types';
 import { ActiveReadingSession } from './activity/session';
 import { createPreviewReminderRunner } from './preview';
 import {
@@ -14,8 +13,8 @@ import { ReminderOverlay, type ReminderOverlayPresentation } from './reminder/ov
 import { DEFAULT_REMINDER_SPEECH } from './reminder/tts';
 import { ActiveReadingReminderScheduler } from './runtime/scheduler';
 import { getWeReadBookTitle, isSupportedWeReadUrl } from './weread/adapter';
-
-const STATS_SAMPLE_INTERVAL_MS = 5_000;
+import { ReadingEngine } from './reading-engine';
+import { installMessageBridge } from './message-bridge';
 
 function getReminderIntervalMs(settings: ReminderSettings): number {
   return settings.reminderIntervalMinutes * 60_000;
@@ -31,10 +30,6 @@ function areSettingsEqual(left: ReminderSettings, right: ReminderSettings): bool
     left.audioEnabled === right.audioEnabled &&
     left.fullscreenReminder === right.fullscreenReminder
   );
-}
-
-function getTodayDate(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 async function bootstrap(doc: Document, win: Window): Promise<void> {
@@ -55,69 +50,18 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   );
   const playReminderAudio = createReminderAudioPlayer();
 
-  let stats: StatsState = persisted.stats;
-  let nextEligibleReminderAt: number | null = persisted.nextEligibleReminderAt;
-  let activeReadingTimeMs = persisted.activeReadingTimeMs;
-  let isActiveReading = persisted.isActiveReading;
   let settings: ReminderSettings = persisted.settings ?? DEFAULT_REMINDER_SETTINGS;
 
-  const reportToolbarIconState = async (nextIsActiveReading: boolean): Promise<void> => {
+  const reportToolbarIconState = async (isActiveReading: boolean): Promise<void> => {
     try {
       await chrome.runtime.sendMessage({
         type: TOOLBAR_ICON_STATE_COMMAND,
         isSupportedPage: true,
-        isActiveReading: nextIsActiveReading
+        isActiveReading
       });
     } catch {
       // The reading flow should keep working even if toolbar updates fail.
     }
-  };
-
-  const persistRuntimeStatus = async (
-    nextStatus: Partial<Pick<PersistedState, 'activeReadingTimeMs' | 'isActiveReading' | 'nextEligibleReminderAt'>>
-  ): Promise<void> => {
-    const nextActiveReadingTimeMs = nextStatus.activeReadingTimeMs ?? activeReadingTimeMs;
-    const nextIsActiveReading = nextStatus.isActiveReading ?? isActiveReading;
-    const nextReminderAt =
-      nextStatus.nextEligibleReminderAt === undefined ? nextEligibleReminderAt : nextStatus.nextEligibleReminderAt;
-
-    if (
-      nextActiveReadingTimeMs === activeReadingTimeMs &&
-      nextIsActiveReading === isActiveReading &&
-      nextReminderAt === nextEligibleReminderAt
-    ) {
-      return;
-    }
-
-    const shouldReportToolbarState = nextIsActiveReading !== isActiveReading;
-
-    activeReadingTimeMs = nextActiveReadingTimeMs;
-    isActiveReading = nextIsActiveReading;
-    nextEligibleReminderAt = nextReminderAt;
-
-    await storage.setRuntimeStatus({
-      activeReadingTimeMs,
-      isActiveReading,
-      nextEligibleReminderAt
-    });
-
-    if (shouldReportToolbarState) {
-      await reportToolbarIconState(isActiveReading);
-    }
-  };
-
-  const persistStats = async (): Promise<void> => {
-    await storage.saveStats(stats);
-  };
-
-  const syncSchedule = async (now: number): Promise<ReturnType<ActiveReadingReminderScheduler['update']>> => {
-    const schedule = scheduler.update(now, session.isActive(now));
-    await persistRuntimeStatus({
-      activeReadingTimeMs: schedule.activeReadingTimeMs,
-      isActiveReading: schedule.isActive,
-      nextEligibleReminderAt: schedule.isActive ? schedule.nextReminderAt : null
-    });
-    return schedule;
   };
 
   const recordReminderAudioDebug = (debugInfo: ReminderAudioDebugInfo) => {
@@ -132,38 +76,44 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
     return debugInfo;
   };
 
-  const triggerReminder = async () => {
-    const dismissed = overlay.show(DEFAULT_REMINDER_SPEECH, 'reminder', getReminderPresentation(settings));
-    await playReminder();
-    await dismissed;
-  };
-
-  const getRuntimeStatusSnapshot = async (now: number): Promise<RuntimeStatusSnapshot> => {
-    const schedule = await syncSchedule(now);
-    const isReminderBlockingVisible = overlay.isBlockingReminderVisible();
-    const isDocumentVisible = doc.visibilityState === 'visible' && session.isVisibleNow();
-    const isActiveReadingNow = !isReminderBlockingVisible && isDocumentVisible && schedule.isActive;
-
-    return {
-      isSupportedPage: true,
-      isDocumentVisible,
-      isActiveReading: isActiveReadingNow,
-      lastInteractionAt: session.getLastInteractionAt(),
-      activeReadingTimeMs: schedule.activeReadingTimeMs,
-      nextEligibleReminderAt: isActiveReadingNow ? schedule.nextReminderAt : null,
-      inactivityTimeoutMs: DEFAULT_POLICY.inactivityTimeoutMs
-    };
-  };
+  const engine = new ReadingEngine(
+    {
+      session,
+      scheduler,
+      storage,
+      overlay,
+      playReminder,
+      recordReminderAudioDebug,
+      reportToolbarIconState,
+      getBookTitle: () => getWeReadBookTitle(doc),
+      getReminderIntervalMs: () => getReminderIntervalMs(settings),
+      getReminderPresentation: () => getReminderPresentation(settings),
+      getReminderSpeech: () => DEFAULT_REMINDER_SPEECH,
+      isAudioEnabled: () => settings.audioEnabled,
+      doc
+    },
+    {
+      stats: persisted.stats,
+      activeReadingTimeMs: persisted.activeReadingTimeMs,
+      isActiveReading: persisted.isActiveReading,
+      nextEligibleReminderAt: persisted.nextEligibleReminderAt
+    }
+  );
 
   const applySettings = async (nextSettings: ReminderSettings): Promise<void> => {
     if (areSettingsEqual(settings, nextSettings)) {
       return;
     }
-
     settings = nextSettings;
     scheduler.setReminderIntervalMs(getReminderIntervalMs(settings));
-    await syncSchedule(Date.now());
+    await engine.syncSchedule(Date.now());
   };
+
+  const previewReminder = createPreviewReminderRunner({
+    overlay,
+    playReminder,
+    getPresentation: () => getReminderPresentation(settings)
+  });
 
   const markInteraction = () => {
     session.markInteraction(Date.now());
@@ -178,94 +128,26 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
     session.setVisibility(doc.visibilityState === 'visible', Date.now());
     void reportToolbarIconState(session.isActive(Date.now()));
     if (doc.visibilityState !== 'visible') {
-      void persistRuntimeStatus({
-        isActiveReading: false,
-        nextEligibleReminderAt: null
-      });
+      void engine.syncSchedule(Date.now());
     }
   });
 
-  const previewReminder = createPreviewReminderRunner({
+  installMessageBridge({
+    storage,
+    engine,
+    session,
     overlay,
     playReminder,
-    getPresentation: () => getReminderPresentation(settings)
-  });
-
-  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
-    if (message?.type === 'preview-reminder') {
-      void previewReminder();
-      return false;
-    }
-
-    if (message?.type === REQUEST_RUNTIME_STATUS_COMMAND) {
-      void (async () => {
-        sendResponse(await getRuntimeStatusSnapshot(Date.now()));
-      })();
-      return true;
-    }
-
-    return false;
-  });
-
-  chrome.storage.onChanged.addListener((changes, areaName) => {
-    if (areaName !== 'local' || !changes[STORAGE_KEY]) {
-      return;
-    }
-
-    void (async () => {
-      const latest = await storage.loadState();
-      await applySettings(latest.settings);
-    })();
+    applySettings,
+    previewReminder,
+    doc,
+    inactivityTimeoutMs: DEFAULT_POLICY.inactivityTimeoutMs
   });
 
   markInteraction();
-  await syncSchedule(Date.now());
+  await engine.syncSchedule(Date.now());
   await reportToolbarIconState(session.isActive(Date.now()));
-
-  win.setInterval(() => {
-    void (async () => {
-      const now = Date.now();
-      if (overlay.isBlockingReminderVisible()) {
-        await persistRuntimeStatus({
-          isActiveReading: false,
-          nextEligibleReminderAt: null
-        });
-        return;
-      }
-
-      const schedule = await syncSchedule(now);
-
-      if (!schedule.isActive) {
-        return;
-      }
-
-      recordReadingSample(stats, {
-        date: getTodayDate(),
-        bookTitle: getWeReadBookTitle(doc),
-        readingTimeMs: STATS_SAMPLE_INTERVAL_MS
-      });
-      await persistStats();
-
-      if (!schedule.reminderDue) {
-        return;
-      }
-
-      recordReminderTriggered(stats, {
-        date: getTodayDate(),
-        bookTitle: getWeReadBookTitle(doc)
-      });
-      await persistStats();
-
-      scheduler.markReminderTriggered(now);
-      await persistRuntimeStatus({
-        activeReadingTimeMs: 0,
-        isActiveReading: true,
-        nextEligibleReminderAt: now + getReminderIntervalMs(settings)
-      });
-
-      await triggerReminder();
-    })();
-  }, STATS_SAMPLE_INTERVAL_MS);
+  engine.start(win);
 }
 
 if (document.readyState === 'loading') {

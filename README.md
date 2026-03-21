@@ -94,6 +94,48 @@ npm run build
 3. 点击 `加载已解压的扩展程序`
 4. 选择 `dist/`
 
+## 本地调试
+
+### 运行测试
+
+```bash
+npm test -- --run
+```
+
+### TypeScript 类型检查
+
+```bash
+npx tsc --noEmit
+```
+
+### 开发流程
+
+1. 修改 `src/` 下的代码
+2. 运行 `npm run build` 重新构建
+3. 在 `chrome://extensions` 页面点击扩展卡片上的刷新按钮
+4. 刷新微信读书页面
+
+### 调试 content script
+
+1. 在微信读书阅读页按 `F12` 打开 DevTools
+2. 在 Console 中查看扩展日志
+3. 检查提醒音频状态：
+   ```js
+   document.documentElement.dataset.wereadEyeCareReminderAudioStatus
+   ```
+
+### 调试 popup / options
+
+1. 右键点击扩展图标 → `审查弹出内容`（popup）
+2. 在 `chrome://extensions` 页面点击扩展的 `service worker` 链接查看 background 日志
+3. 在 `chrome://extensions` 页面点击 `选项` 打开 options 页面后按 `F12`
+
+### 调试 service worker (background)
+
+1. 打开 `chrome://extensions`
+2. 找到扩展卡片，点击 `Service Worker` 链接
+3. 在打开的 DevTools 中查看 background 日志
+
 ## 使用方式
 
 1. 打开微信读书阅读页

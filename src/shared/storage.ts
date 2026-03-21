@@ -1,5 +1,5 @@
 import { DEFAULT_REMINDER_SETTINGS } from './constants';
-import { createEmptyStatsState, normalizeStatsState } from './stats';
+import { createEmptyStatsState, normalizeStatsState, trimOldDays } from './stats';
 import type { PersistedState, ReminderSettings, StatsState, StorageAreaLike } from './types';
 
 export const STORAGE_KEY = 'weread-eye-care-state';
@@ -44,7 +44,7 @@ function normalizeState(stored: unknown): PersistedState {
   const raw = stored as Partial<PersistedState>;
 
   return {
-    stats: normalizeStatsState(raw.stats),
+    stats: trimOldDays(normalizeStatsState(raw.stats)),
     activeReadingTimeMs: typeof raw.activeReadingTimeMs === 'number' ? raw.activeReadingTimeMs : 0,
     isActiveReading: typeof raw.isActiveReading === 'boolean' ? raw.isActiveReading : false,
     nextEligibleReminderAt: typeof raw.nextEligibleReminderAt === 'number' ? raw.nextEligibleReminderAt : null,
@@ -53,6 +53,8 @@ function normalizeState(stored: unknown): PersistedState {
 }
 
 export class AppStorage {
+  private pendingWrite: Promise<void> = Promise.resolve();
+
   constructor(private readonly storageArea: StorageAreaLike = chrome.storage.local) {}
 
   async loadState(): Promise<PersistedState> {
@@ -64,27 +66,33 @@ export class AppStorage {
     await this.storageArea.set({ [STORAGE_KEY]: state });
   }
 
+  private mutate(fn: (state: PersistedState) => PersistedState): Promise<void> {
+    const next = this.pendingWrite.then(async () => {
+      const state = await this.loadState();
+      await this.saveState(fn(state));
+    });
+    this.pendingWrite = next.catch(() => undefined);
+    return next;
+  }
+
   async loadStats(): Promise<StatsState> {
     const state = await this.loadState();
     return state.stats;
   }
 
   async saveStats(stats: StatsState): Promise<void> {
-    const state = await this.loadState();
-    await this.saveState({ ...state, stats });
+    return this.mutate((state) => ({ ...state, stats }));
   }
 
   async setRuntimeStatus(status: Partial<Pick<PersistedState, 'activeReadingTimeMs' | 'isActiveReading' | 'nextEligibleReminderAt'>>): Promise<void> {
-    const state = await this.loadState();
-    await this.saveState({ ...state, ...status });
+    return this.mutate((state) => ({ ...state, ...status }));
   }
 
   async saveSettings(settings: ReminderSettings): Promise<void> {
-    const state = await this.loadState();
-    await this.saveState({ ...state, settings });
+    return this.mutate((state) => ({ ...state, settings }));
   }
 
   async resetState(): Promise<void> {
-    await this.saveState(getDefaultState());
+    return this.mutate(() => getDefaultState());
   }
 }

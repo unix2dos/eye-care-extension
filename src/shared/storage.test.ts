@@ -114,4 +114,44 @@ describe('AppStorage', () => {
       }
     });
   });
+
+  it('preserves both mutations when setRuntimeStatus and saveStats are called concurrently', async () => {
+    const storageArea = new MemoryStorageArea();
+    const storage = new AppStorage(storageArea);
+    const stats = createEmptyStatsState();
+    recordReadingSample(stats, {
+      date: '2026-03-22',
+      bookTitle: '变量',
+      readingTimeMs: 60_000
+    });
+
+    await storage.saveState({
+      stats: createEmptyStatsState(),
+      activeReadingTimeMs: 0,
+      isActiveReading: false,
+      nextEligibleReminderAt: null,
+      settings: {
+        reminderIntervalMinutes: 20,
+        audioEnabled: true,
+        fullscreenReminder: true
+      }
+    } as PersistedState);
+
+    // Fire both concurrently — without a write queue the second write would overwrite the first.
+    await Promise.all([
+      storage.setRuntimeStatus({
+        activeReadingTimeMs: 300_000,
+        isActiveReading: true,
+        nextEligibleReminderAt: 500_000
+      }),
+      storage.saveStats(stats)
+    ]);
+
+    const after = await storage.loadState();
+
+    expect(after.activeReadingTimeMs).toBe(300_000);
+    expect(after.isActiveReading).toBe(true);
+    expect(after.nextEligibleReminderAt).toBe(500_000);
+    expect(after.stats).toEqual(stats);
+  });
 });

@@ -102,3 +102,18 @@ export function normalizeStatsState(state: unknown): StatsState {
     days: Object.fromEntries(Object.entries(raw.days ?? {}).map(([date, day]) => [date, normalizeDayStats(date, day)]))
   };
 }
+
+export const DEFAULT_STATS_RETENTION_DAYS = 90;
+
+export function trimOldDays(state: StatsState, retentionDays: number = DEFAULT_STATS_RETENTION_DAYS, today?: string): StatsState {
+  const todayDate = today ?? new Date().toISOString().slice(0, 10);
+  const cutoff = new Date(todayDate);
+  cutoff.setDate(cutoff.getDate() - retentionDays);
+  const cutoffDate = cutoff.toISOString().slice(0, 10);
+
+  const trimmedDays = Object.fromEntries(
+    Object.entries(state.days).filter(([date]) => date >= cutoffDate)
+  );
+
+  return { days: trimmedDays };
+}

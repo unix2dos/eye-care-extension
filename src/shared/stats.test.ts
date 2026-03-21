@@ -1,4 +1,4 @@
-import { createEmptyStatsState, recordReadingSample, recordReminderTriggered } from './stats';
+import { createEmptyStatsState, recordReadingSample, recordReminderTriggered, trimOldDays } from './stats';
 
 describe('stats aggregation', () => {
   it('aggregates daily and per-book reading samples with the current minimal stats model', () => {
@@ -55,5 +55,27 @@ describe('stats aggregation', () => {
         }
       }
     });
+  });
+});
+
+describe('trimOldDays', () => {
+  it('keeps days within retention and removes days beyond it', () => {
+    const state = createEmptyStatsState();
+
+    recordReadingSample(state, { date: '2025-12-01', bookTitle: 'old', readingTimeMs: 60_000 });
+    recordReadingSample(state, { date: '2026-03-20', bookTitle: 'recent', readingTimeMs: 60_000 });
+    recordReadingSample(state, { date: '2026-03-22', bookTitle: 'today', readingTimeMs: 60_000 });
+
+    const trimmed = trimOldDays(state, 90, '2026-03-22');
+
+    expect(trimmed.days['2025-12-01']).toBeUndefined();
+    expect(trimmed.days['2026-03-20']).toBeDefined();
+    expect(trimmed.days['2026-03-22']).toBeDefined();
+  });
+
+  it('returns empty days for empty stats', () => {
+    const trimmed = trimOldDays(createEmptyStatsState(), 90, '2026-03-22');
+
+    expect(trimmed).toEqual({ days: {} });
   });
 });
