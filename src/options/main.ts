@@ -4,7 +4,10 @@ import { exportBookStatsCsv } from '../shared/csv';
 import { resolveOptionsRuntimeStatus } from '../shared/runtime-status';
 import type { ReminderSettings } from '../shared/types';
 import { buildExportFilename, downloadCsv } from './export';
+import { buildEnabledSitesMarkup, loadEnabledSites, removeEnabledSite } from './sites';
 import { buildOptionsViewModel } from './view-model';
+
+let runtimeStatusIntervalId: number | null = null;
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -17,9 +20,15 @@ function parseReminderIntervalMinutes(value: string): ReminderSettings['reminder
 }
 
 async function render(settingsStatusMessage = '修改后会立即保存并同步到已启用站点。'): Promise<void> {
+  if (runtimeStatusIntervalId !== null) {
+    window.clearInterval(runtimeStatusIntervalId);
+    runtimeStatusIntervalId = null;
+  }
+
   const storage = new AppStorage();
   const state = await storage.loadState();
   const runtimeStatus = await resolveOptionsRuntimeStatus(state);
+  const enabledSites = await loadEnabledSites();
   const viewModel = buildOptionsViewModel(state, runtimeStatus, today());
   const app = document.getElementById('app');
 
@@ -66,6 +75,13 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
           <span>使用全屏提醒</span>
         </label>
         <p id="settings-status" class="settings-status">${settingsStatusMessage}</p>
+      </section>
+      <section class="enabled-sites">
+        <h2>已启用站点</h2>
+        <p>这里展示通过 popup 单独授权过的站点，你可以随时撤销。</p>
+        <div id="enabled-sites-list">
+          ${buildEnabledSitesMarkup(enabledSites)}
+        </div>
       </section>
       <div class="actions">
         <button id="export">导出 CSV</button>
@@ -143,7 +159,21 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
     await render('本地统计与提醒设置都已恢复默认值。');
   });
 
-  window.setInterval(() => {
+  document.querySelectorAll<HTMLButtonElement>('[data-remove-origin]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const origin = button.dataset.removeOrigin;
+      if (!origin) {
+        return;
+      }
+
+      void (async () => {
+        const removed = await removeEnabledSite(origin);
+        await render(removed ? '已移除站点权限。' : '未能移除站点权限。');
+      })();
+    });
+  });
+
+  runtimeStatusIntervalId = window.setInterval(() => {
     void updateRuntimeStatus();
   }, 1_000);
 }

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+  DEFAULT_HOST_PERMISSION_PATTERNS,
   buildOriginPermissionPattern,
   hasSiteAccess,
   isInjectableUrl,
@@ -9,6 +10,10 @@ import {
 } from './site-access';
 
 describe('site access helpers', () => {
+  it('keeps WeRead as the only built-in default host permission', () => {
+    expect(DEFAULT_HOST_PERMISSION_PATTERNS).toEqual(['https://weread.qq.com/*']);
+  });
+
   it('builds a host permission pattern for regular web origins', () => {
     expect(buildOriginPermissionPattern(new URL('https://example.com/article?id=1'))).toBe('https://example.com/*');
     expect(buildOriginPermissionPattern(new URL('http://localhost:5173/demo'))).toBe('http://localhost:5173/*');

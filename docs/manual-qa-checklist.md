@@ -219,9 +219,24 @@ document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
   - 提醒间隔设置
   - 语音开关
   - 全屏提醒开关
+  - 已启用站点列表
   - 导出 CSV
 
-## 16. 设置项即时生效
+## 16. 已启用站点管理
+
+1. 先通过 popup 为一个普通网页授权
+2. 打开扩展选项页
+3. 在 `已启用站点` 区域观察列表
+4. 点击对应站点的 `移除`
+
+验收标准：
+
+- 列表中会显示已授权站点
+- 默认的 `https://weread.qq.com/*` 不出现在可移除列表中
+- 点击 `移除` 后，该站点会从列表中消失
+- 移除后回到该站点，popup 再次显示 `在此站点启用护眼提醒`
+
+## 17. 设置项即时生效
 
 1. 打开扩展选项页
 2. 把提醒间隔切到 `15` 或 `30` 分钟
@@ -237,7 +252,7 @@ document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
 - 关闭全屏提醒后，预览提醒改为右下角卡片，不阻塞底层页面
 - 重新打开 options，设置值保持不变
 
-## 17. 清空数据
+## 18. 清空数据
 
 1. 在扩展选项页点击 `清空本地统计`
 2. 返回 popup 再查看状态
@@ -250,7 +265,7 @@ document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
 - 提醒设置恢复默认值
 - 重新开始阅读后，从新的累计周期开始
 
-## 18. CSV 导出
+## 19. CSV 导出
 
 1. 在扩展选项页点击 `导出 CSV`
 2. 打开下载得到的文件
@@ -267,7 +282,7 @@ document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
   - `reminderCount`
 - 不包含眨眼率或恢复效果相关字段
 
-## 19. 回归关注点
+## 20. 回归关注点
 
 重点观察这些风险：
 

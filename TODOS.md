@@ -14,7 +14,7 @@
 
 **Completed:** 2026-03-22 in Phase 1 popup enable flow. 现在仅 `http/https` 页面会显示启用按钮，`chrome://`、`chrome-extension://`、`about:` 等受限页面不会再提供启用入口。
 
-## Options: 已启用站点列表管理
+## Completed: Options 已启用站点列表管理
 
 **What:** Options 页增加"已启用站点列表"管理界面，允许用户查看和移除已授权的站点。
 
@@ -25,3 +25,5 @@
 **Depends on:** Phase 1 完成。
 
 **Added:** 2026-03-22 via /plan-eng-review
+
+**Completed:** 2026-03-22. Options 页面现在可以列出通过 popup 单独授权的站点，并调用 `chrome.permissions.remove()` 撤销授权；默认 WeRead 站点不会出现在可移除列表里。

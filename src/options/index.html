@@ -88,6 +88,66 @@
         font-weight: 700;
       }
 
+      .enabled-sites {
+        margin: 0 0 24px;
+        padding: 18px 20px;
+        border-radius: 18px;
+        background: #fff8ee;
+      }
+
+      .enabled-sites h2 {
+        margin: 0 0 8px;
+      }
+
+      .enabled-sites p {
+        margin: 0 0 12px;
+        color: #5f4f3f;
+      }
+
+      .site-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 10px;
+      }
+
+      .site-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 16px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.72);
+      }
+
+      .site-meta {
+        display: grid;
+        gap: 4px;
+      }
+
+      .site-origin {
+        color: #6f5b47;
+        font-size: 13px;
+        word-break: break-all;
+      }
+
+      .empty-state {
+        margin: 0;
+      }
+
+      .site-remove {
+        flex-shrink: 0;
+      }
+
+      @media (max-width: 640px) {
+        .site-row {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+
       button {
         border: 0;
         border-radius: 999px;

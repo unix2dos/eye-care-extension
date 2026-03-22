@@ -1,6 +1,7 @@
 import { isSupportedWeReadUrl } from '../content/weread/adapter';
 
 export const OPTIONAL_HOST_PERMISSION_PATTERNS = ['http://*/*', 'https://*/*'] as const;
+export const DEFAULT_HOST_PERMISSION_PATTERNS = ['https://weread.qq.com/*'] as const;
 
 export interface TabSiteAccessState {
   hasAccess: boolean;
