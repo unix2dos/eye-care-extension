@@ -19,7 +19,8 @@ export interface ReadingEngineDeps {
   playReminder: () => Promise<ReminderAudioDebugInfo>;
   recordReminderAudioDebug: (info: ReminderAudioDebugInfo) => void;
   reportToolbarIconState: (isActiveReading: boolean) => Promise<void>;
-  getBookTitle: () => string;
+  getDomain: () => string | null;
+  getBookTitle: () => string | null;
   getReminderIntervalMs: () => number;
   getReminderPresentation: () => ReminderOverlayPresentation;
   getReminderSpeech: () => string;
@@ -135,6 +136,7 @@ export class ReadingEngine {
   private recordReadingSample(readingTimeMs: number): void {
     recordSample(this.stats, {
       date: getTodayDate(),
+      domain: this.deps.getDomain(),
       bookTitle: this.deps.getBookTitle(),
       readingTimeMs
     });
@@ -143,6 +145,7 @@ export class ReadingEngine {
   private recordReminderTriggered(): void {
     recordReminder(this.stats, {
       date: getTodayDate(),
+      domain: this.deps.getDomain(),
       bookTitle: this.deps.getBookTitle()
     });
   }

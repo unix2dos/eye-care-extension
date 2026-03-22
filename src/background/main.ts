@@ -3,8 +3,10 @@ import { TOOLBAR_ICON_STATE_COMMAND, type ToolbarIconStateMessage } from '../sha
 import { applyToolbarActionVisuals } from './toolbar-action';
 import { resolveToolbarIconStateForTab } from './toolbar-state';
 import { AppStorage } from '../shared/storage';
+import { resolveTabSiteAccess } from '../shared/site-access';
 
 const ICON_SIZES = [16, 32] as const;
+const CONTENT_SCRIPT_FILES = ['content/main.js'];
 const tabStates = new Map<number, ToolbarIconState>();
 const iconCache = new Map<ToolbarIconState, Promise<Record<number, ImageData>>>();
 const storage = new AppStorage();
@@ -41,9 +43,29 @@ function getIconImageData(state: ToolbarIconState): Promise<Record<number, Image
   return renderPromise;
 }
 
+async function injectContentScriptIfNeeded(tab?: chrome.tabs.Tab): Promise<void> {
+  if (typeof tab?.id !== 'number') {
+    return;
+  }
+
+  const siteAccess = await resolveTabSiteAccess(tab);
+  if (!siteAccess.hasAccess || siteAccess.isWeRead) {
+    return;
+  }
+
+  try {
+    await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      files: CONTENT_SCRIPT_FILES
+    });
+  } catch (error) {
+    console.warn('Failed to inject the content script for the current tab.', error);
+  }
+}
+
 async function applyToolbarIconForTab(tab?: chrome.tabs.Tab): Promise<void> {
   const persisted = await storage.loadState();
-  const iconState = resolveToolbarIconStateForTab({
+  const iconState = await resolveToolbarIconStateForTab({
     tabUrl: tab?.url,
     runtimeState: typeof tab?.id === 'number' ? tabStates.get(tab.id) : undefined,
     persistedIsActiveReading: persisted.isActiveReading
@@ -66,6 +88,7 @@ async function applyToolbarIconForTab(tab?: chrome.tabs.Tab): Promise<void> {
 
 async function refreshActiveTabIcon(): Promise<void> {
   const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  await injectContentScriptIfNeeded(activeTab);
   await applyToolbarIconForTab(activeTab);
 }
 
@@ -107,19 +130,29 @@ chrome.runtime.onMessage.addListener((message: ToolbarIconStateMessage, sender) 
 chrome.tabs.onActivated.addListener(({ tabId }) => {
   void chrome.tabs
     .get(tabId)
-    .then((tab) => applyToolbarIconForTab(tab))
+    .then(async (tab) => {
+      await injectContentScriptIfNeeded(tab);
+      await applyToolbarIconForTab(tab);
+    })
     .catch(() => undefined);
 });
 
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status !== 'loading') {
+  if (changeInfo.status === 'loading') {
+    tabStates.delete(tabId);
+
+    if (tab.active) {
+      void applyToolbarIconForTab(tab);
+    }
+
     return;
   }
 
-  tabStates.delete(tabId);
-
-  if (tab.active) {
-    void applyToolbarIconForTab(tab);
+  if (changeInfo.status === 'complete') {
+    void injectContentScriptIfNeeded(tab);
+    if (tab.active) {
+      void applyToolbarIconForTab(tab);
+    }
   }
 });
 

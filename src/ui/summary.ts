@@ -63,7 +63,7 @@ function formatElapsedSince(timestamp: number | null, now: number): string {
 
 function getStatusExplanation(snapshot: RuntimeStatusSnapshot): string {
   if (!snapshot.isSupportedPage) {
-    return '当前页不是微信读书阅读页';
+    return '当前页面未启用护眼提醒';
   }
 
   if (!snapshot.isDocumentVisible) {

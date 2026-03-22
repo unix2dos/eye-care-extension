@@ -25,6 +25,7 @@ describe('AppStorage', () => {
     const stats = createEmptyStatsState();
     recordReadingSample(stats, {
       date: '2026-03-13',
+      domain: 'weread.qq.com',
       bookTitle: '变量',
       readingTimeMs: 120_000
     });
@@ -121,6 +122,7 @@ describe('AppStorage', () => {
     const stats = createEmptyStatsState();
     recordReadingSample(stats, {
       date: '2026-03-22',
+      domain: 'weread.qq.com',
       bookTitle: '变量',
       readingTimeMs: 60_000
     });
@@ -153,5 +155,53 @@ describe('AppStorage', () => {
     expect(after.isActiveReading).toBe(true);
     expect(after.nextEligibleReminderAt).toBe(500_000);
     expect(after.stats).toEqual(stats);
+  });
+
+  it('keeps legacy book stats while normalizing the schema version', async () => {
+    const storageArea = new MemoryStorageArea();
+    const storage = new AppStorage(storageArea);
+
+    await storageArea.set({
+      'weread-eye-care-state': {
+        stats: {
+          days: {
+            '2026-03-22': {
+              date: '2026-03-22',
+              readingTimeMs: 120_000,
+              reminderCount: 1,
+              books: {
+                变量: {
+                  title: '变量',
+                  readingTimeMs: 120_000,
+                  reminderCount: 1
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    const state = await storage.loadState();
+
+    expect(state.stats).toEqual({
+      schemaVersion: 2,
+      days: {
+        '2026-03-22': {
+          date: '2026-03-22',
+          readingTimeMs: 120_000,
+          reminderCount: 1,
+          books: {
+            变量: {
+              title: '变量',
+              domain: null,
+              readingTimeMs: 120_000,
+              reminderCount: 1
+            }
+          },
+          domains: {}
+        }
+      }
+    });
   });
 });

@@ -1,7 +1,7 @@
-import { isSupportedWeReadUrl } from '../content/weread/adapter';
+import { hasSiteAccess } from '../shared/site-access';
 import type { ToolbarIconState } from './icon';
 
-export function resolveToolbarIconStateForTab({
+export async function resolveToolbarIconStateForTab({
   tabUrl,
   runtimeState,
   persistedIsActiveReading
@@ -9,18 +9,14 @@ export function resolveToolbarIconStateForTab({
   tabUrl?: string;
   runtimeState?: ToolbarIconState;
   persistedIsActiveReading: boolean;
-}): ToolbarIconState {
+}): Promise<ToolbarIconState> {
   if (runtimeState) {
     return runtimeState;
   }
 
-  if (typeof tabUrl !== 'string') {
+  if (!persistedIsActiveReading || typeof tabUrl !== 'string') {
     return 'paused';
   }
 
-  try {
-    return isSupportedWeReadUrl(new URL(tabUrl)) && persistedIsActiveReading ? 'active' : 'paused';
-  } catch {
-    return 'paused';
-  }
+  return (await hasSiteAccess(tabUrl)) ? 'active' : 'paused';
 }

@@ -21,12 +21,20 @@ export interface RuntimeStatusSnapshot {
 
 export interface ReadingSample {
   date: string;
-  bookTitle: string;
+  domain?: string | null;
+  bookTitle?: string | null;
   readingTimeMs: number;
 }
 
 export interface BookStats {
   title: string;
+  domain: string | null;
+  readingTimeMs: number;
+  reminderCount: number;
+}
+
+export interface DomainStats {
+  domain: string;
   readingTimeMs: number;
   reminderCount: number;
 }
@@ -36,9 +44,11 @@ export interface DayStats {
   readingTimeMs: number;
   reminderCount: number;
   books: Record<string, BookStats>;
+  domains: Record<string, DomainStats>;
 }
 
 export interface StatsState {
+  schemaVersion: number;
   days: Record<string, DayStats>;
 }
 

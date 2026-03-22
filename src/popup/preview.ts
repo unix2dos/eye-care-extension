@@ -1,6 +1,4 @@
-import { isSupportedWeReadUrl } from '../content/weread/adapter';
-
-export const PREVIEW_DISABLED_HINT = '仅在微信读书阅读页可预览';
+export const PREVIEW_DISABLED_HINT = '当前页面未启用护眼提醒';
 export const PREVIEW_REMINDER_COMMAND = 'preview-reminder';
 
 export interface PreviewReminderState {
@@ -11,8 +9,8 @@ export interface PreviewReminderState {
 
 type PreviewTabLike = Pick<chrome.tabs.Tab, 'id' | 'url'> | null | undefined;
 
-export function buildPreviewReminderState(tab: PreviewTabLike): PreviewReminderState {
-  if (typeof tab?.id !== 'number' || typeof tab.url !== 'string') {
+export function buildPreviewReminderState(tab: PreviewTabLike, hasAccess: boolean): PreviewReminderState {
+  if (typeof tab?.id !== 'number' || !hasAccess) {
     return {
       enabled: false,
       tabId: null,
@@ -20,24 +18,9 @@ export function buildPreviewReminderState(tab: PreviewTabLike): PreviewReminderS
     };
   }
 
-  try {
-    const supported = isSupportedWeReadUrl(new URL(tab.url));
-    return supported
-      ? {
-          enabled: true,
-          tabId: tab.id,
-          hint: null
-        }
-      : {
-          enabled: false,
-          tabId: null,
-          hint: PREVIEW_DISABLED_HINT
-        };
-  } catch {
-    return {
-      enabled: false,
-      tabId: null,
-      hint: PREVIEW_DISABLED_HINT
-    };
-  }
+  return {
+    enabled: true,
+    tabId: tab.id,
+    hint: null
+  };
 }

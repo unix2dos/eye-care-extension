@@ -33,12 +33,15 @@ function areSettingsEqual(left: ReminderSettings, right: ReminderSettings): bool
 }
 
 async function bootstrap(doc: Document, win: Window): Promise<void> {
+  if (doc.documentElement.dataset.wereadEyeCareBootMarker === 'booted') {
+    return;
+  }
+
   doc.documentElement.dataset.wereadEyeCareBootMarker = 'booted';
 
   const url = new URL(win.location.href);
-  if (!isSupportedWeReadUrl(url)) {
-    return;
-  }
+  const isWeReadPage = isSupportedWeReadUrl(url);
+  const domain = url.hostname || null;
 
   const overlay = new ReminderOverlay(doc);
   const storage = new AppStorage();
@@ -85,7 +88,8 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
       playReminder,
       recordReminderAudioDebug,
       reportToolbarIconState,
-      getBookTitle: () => getWeReadBookTitle(doc),
+      getDomain: () => domain,
+      getBookTitle: () => (isWeReadPage ? getWeReadBookTitle(doc) : null),
       getReminderIntervalMs: () => getReminderIntervalMs(settings),
       getReminderPresentation: () => getReminderPresentation(settings),
       getReminderSpeech: () => DEFAULT_REMINDER_SPEECH,

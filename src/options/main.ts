@@ -16,7 +16,7 @@ function parseReminderIntervalMinutes(value: string): ReminderSettings['reminder
   return minutes === 15 || minutes === 20 || minutes === 30 ? minutes : 20;
 }
 
-async function render(settingsStatusMessage = '修改后会立即保存并同步到当前阅读页。'): Promise<void> {
+async function render(settingsStatusMessage = '修改后会立即保存并同步到已启用站点。'): Promise<void> {
   const storage = new AppStorage();
   const state = await storage.loadState();
   const runtimeStatus = await resolveOptionsRuntimeStatus(state);
@@ -29,8 +29,8 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
 
   app.innerHTML = `
     <section class="card">
-      <h1>微信读书护眼扩展</h1>
-      <p>扩展只按你的活跃阅读时长提醒。</p>
+      <h1>护眼提醒扩展</h1>
+      <p>扩展只按你的活跃用眼时长提醒。</p>
       <div class="metrics">
         <div class="metric"><div>今日阅读</div><strong>${viewModel.summary.todayReadingMinutes} 分钟</strong></div>
         <div class="metric"><div>今日提醒</div><strong>${viewModel.summary.todayReminderCount} 次</strong></div>
@@ -71,8 +71,8 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
         <button id="export">导出 CSV</button>
         <button id="reset" class="secondary">清空本地统计</button>
       </div>
-      <p>当你在微信读书页面持续活跃阅读累计 ${state.settings.reminderIntervalMinutes} 分钟时，扩展会弹出提醒${state.settings.audioEnabled ? '并播放固定语音' : ''}。</p>
-      <p>导出文件只包含当前版本实际保存的数据：日期、书名、阅读分钟数、提醒次数。</p>
+      <p>当你在已启用站点持续活跃用眼累计 ${state.settings.reminderIntervalMinutes} 分钟时，扩展会弹出提醒${state.settings.audioEnabled ? '并播放固定语音' : ''}。</p>
+      <p>导出文件包含当前版本实际保存的数据：日期、域名、书名（如有）、阅读分钟数、提醒次数。</p>
     </section>
   `;
 

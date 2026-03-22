@@ -1,27 +1,23 @@
 <!-- # WeRead Eye Care -->
 
-一个面向 `微信读书 Web` 的 Chrome 护眼提醒扩展。
+一个支持 `微信读书默认启用 + 其他站点按需启用` 的 Chrome 护眼提醒扩展。
 
-WeRead Eye Care is a focused Chrome extension for WeRead Web. It tracks active reading time, triggers local break reminders, and keeps all settings and stats inside the current browser profile.
+Eye Care Reminder is a Chrome extension that tracks active reading time, triggers local break reminders, and keeps all settings and stats inside the current browser profile.
 
 ![WeRead Eye Care popup overview](docs/store/images/zh/01-popup.png)
 
-
-
 下载地址： https://chromewebstore.google.com/detail/weread-eye-care/ikcfjpodlbbmcemmbhokoenehlkhdegh
-
-
 
 ## 概览
 
-`WeRead Eye Care` 解决的是一个非常具体的问题：当你在微信读书网页里连续阅读时，如何在不引入摄像头、不依赖云服务的前提下，得到明确但克制的休息提醒。
+`Eye Care Reminder` 解决的是一个具体的问题：当你在浏览器里持续阅读或用眼时，如何在不引入摄像头、不依赖云服务的前提下，得到明确但克制的休息提醒。
 
-扩展只在 `https://weread.qq.com/web/reader/*` 生效。它根据“活跃阅读时间”而不是自然时钟来累计计时，并在到达提醒间隔后通过页面提醒和内置语音提示你暂停一下。
+扩展在 `微信读书阅读页` 默认生效；在其他普通网页上，用户可以通过 popup 为当前站点单独授权启用。它根据“活跃阅读时间”而不是自然时钟来累计计时，并在到达提醒间隔后通过页面提醒和内置语音提示你暂停一下。
 
 ## 核心能力
 
-- `微信读书专用`
-  只在微信读书阅读页工作，不干扰其他网站。
+- `微信读书默认支持 + 其他站点按需启用`
+  微信读书阅读页开箱即用，其他站点只在你明确授权后才会工作。
 - `活跃阅读计时`
   只有页面可见、标签页在前台、且最近仍有阅读操作时才继续累计。
 - `明确的休息提醒`
@@ -31,7 +27,7 @@ WeRead Eye Care is a focused Chrome extension for WeRead Web. It tracks active r
 - `即时状态可见`
   `popup` 显示今日阅读、今日提醒、阅读状态、状态解释和下次提醒倒计时，工具栏显示 `读 / 停` 状态。
 - `本地统计与导出`
-  统计保存在 `chrome.storage.local`，支持导出按日期和书名汇总的 CSV。
+  统计保存在 `chrome.storage.local`，支持导出按日期、域名和书名汇总的 CSV。
 
 ## 界面预览
 
@@ -39,7 +35,7 @@ WeRead Eye Care is a focused Chrome extension for WeRead Web. It tracks active r
 
 ![Popup overview](docs/store/images/zh/01-popup.png)
 
-弹窗集中展示今日阅读、当前计时状态和下一次提醒倒计时，并提供提醒预览和设置入口。
+弹窗集中展示今日阅读、当前计时状态和下一次提醒倒计时，并提供当前站点启用、提醒预览和设置入口。
 
 ### 设置页
 
@@ -57,10 +53,11 @@ WeRead Eye Care is a focused Chrome extension for WeRead Web. It tracks active r
 
 扩展当前采用一套简单且稳定的提醒模型：
 
-1. 仅在微信读书阅读页识别阅读状态。
-2. 当页面可见、标签页在前台，且最近 `3 分钟` 内有滚动、点击、按键或滚轮操作时，视为“活跃阅读”。
-3. 只有处于活跃阅读状态时，才继续累计本轮阅读时间。
-4. 达到设定间隔后触发提醒。
+1. 微信读书阅读页默认支持。
+2. 其他普通网页需要先在 popup 中点击 `在此站点启用护眼提醒` 并授权当前站点。
+3. 当页面可见、标签页在前台，且最近 `3 分钟` 内有滚动、点击、按键或滚轮操作时，视为“活跃阅读”。
+4. 只有处于活跃阅读状态时，才继续累计本轮阅读时间。
+5. 达到设定间隔后触发提醒。
 
 当前支持的提醒间隔：
 
@@ -76,7 +73,8 @@ WeRead Eye Care is a focused Chrome extension for WeRead Web. It tracks active r
 - 不请求麦克风权限
 - 不上传阅读数据到远端服务
 - 不依赖云端语音服务
-- 只申请 `storage` 和 `https://weread.qq.com/*` 所需权限
+- 默认只申请 `storage`、`scripting` 和 `https://weread.qq.com/*`
+- 对其他网站的权限通过 popup 按站点动态申请，不一次性请求 `<all_urls>`
 
 隐私政策见 [PRIVACY.md](PRIVACY.md)。
 
@@ -113,11 +111,11 @@ npx tsc --noEmit
 1. 修改 `src/` 下的代码
 2. 运行 `npm run build` 重新构建
 3. 在 `chrome://extensions` 页面点击扩展卡片上的刷新按钮
-4. 刷新微信读书页面
+4. 刷新当前测试页面
 
 ### 调试 content script
 
-1. 在微信读书阅读页按 `F12` 打开 DevTools
+1. 在已启用页面按 `F12` 打开 DevTools
 2. 在 Console 中查看扩展日志
 3. 检查提醒音频状态：
    ```js
@@ -138,18 +136,18 @@ npx tsc --noEmit
 
 ## 使用方式
 
-1. 打开微信读书阅读页
+1. 打开微信读书阅读页，或打开任意普通网页后在 popup 中点击 `在此站点启用护眼提醒`
 2. 正常阅读，扩展会自动累计活跃阅读时间
 3. 到达提醒间隔后，页面会显示提醒遮罩，并按设置决定是否播放语音
 4. 点击扩展图标，可以查看当前阅读状态与下一次提醒倒计时
-5. `popup` 会额外解释当前为什么在计时，或为什么暂停
+5. `popup` 会额外解释当前为什么在计时，为什么暂停，或为什么当前站点尚未启用
 6. 如需查看更完整的运行状态和调整提醒间隔、语音或提醒样式，打开设置页即可
 7. 如需提前查看提醒效果，可直接使用 `popup` 里的 `预览提醒`
 
 ## 当前范围
 
-- 只支持微信读书阅读页
+- 微信读书阅读页默认支持，其他站点按域名单独启用
 - 默认提醒模型基于活跃阅读累计时间
-- 当前 CSV 导出字段为 `date / bookTitle / readingMinutes / reminderCount`
-- 当前不支持云同步、自定义提醒音频和多站点适配
-- 当前暂停原因优先级为：不在微信读书阅读页、页面不在前台、最近 3 分钟无阅读操作
+- 当前 CSV 导出字段为 `date / domain / bookTitle / readingMinutes / reminderCount`
+- 当前不支持云同步、自定义提醒音频和已启用站点管理 UI
+- 当前暂停原因优先级为：当前页未启用、页面不在前台、最近 3 分钟无阅读操作

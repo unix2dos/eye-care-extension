@@ -1,19 +1,7 @@
 import { DEFAULT_POLICY } from './constants';
 import { REQUEST_RUNTIME_STATUS_COMMAND } from './messages';
 import type { PersistedState, RuntimeStatusSnapshot } from './types';
-import { isSupportedWeReadUrl } from '../content/weread/adapter';
-
-function isSupportedTab(tab: Pick<chrome.tabs.Tab, 'url'> | null | undefined): boolean {
-  if (typeof tab?.url !== 'string') {
-    return false;
-  }
-
-  try {
-    return isSupportedWeReadUrl(new URL(tab.url));
-  } catch {
-    return false;
-  }
-}
+import { hasSiteAccess } from './site-access';
 
 export function buildFallbackRuntimeStatus(
   state: PersistedState,
@@ -48,7 +36,7 @@ export async function getActiveTab(): Promise<chrome.tabs.Tab | null> {
   return tabs[0] ?? null;
 }
 
-export function pickPreferredWeReadTab(tabs: chrome.tabs.Tab[]): chrome.tabs.Tab | null {
+export function pickPreferredTab(tabs: chrome.tabs.Tab[]): chrome.tabs.Tab | null {
   if (tabs.length === 0) {
     return null;
   }
@@ -66,29 +54,46 @@ export function pickPreferredWeReadTab(tabs: chrome.tabs.Tab[]): chrome.tabs.Tab
   })[0] ?? null;
 }
 
-export async function findPreferredWeReadTab(): Promise<chrome.tabs.Tab | null> {
+async function findPreferredAccessibleTab(tabs: chrome.tabs.Tab[]): Promise<chrome.tabs.Tab | null> {
+  const sortedTabs = tabs
+    .slice()
+    .sort((left, right) => {
+      if (left.active === right.active) {
+        return (right.lastAccessed ?? 0) - (left.lastAccessed ?? 0);
+      }
+
+      return left.active ? -1 : 1;
+    });
+
+  for (const tab of sortedTabs) {
+    if (await hasSiteAccess(tab.url)) {
+      return tab;
+    }
+  }
+
+  return null;
+}
+
+export async function findPreferredSupportedTab(): Promise<chrome.tabs.Tab | null> {
   const currentWindowTabs = await chrome.tabs.query({
-    currentWindow: true,
-    url: 'https://weread.qq.com/web/reader/*'
+    currentWindow: true
   });
-  const currentWindowChoice = pickPreferredWeReadTab(currentWindowTabs);
+  const currentWindowChoice = await findPreferredAccessibleTab(currentWindowTabs);
 
   if (currentWindowChoice) {
     return currentWindowChoice;
   }
 
-  const allWindowTabs = await chrome.tabs.query({
-    url: 'https://weread.qq.com/web/reader/*'
-  });
+  const allWindowTabs = await chrome.tabs.query({});
 
-  return pickPreferredWeReadTab(allWindowTabs);
+  return findPreferredAccessibleTab(allWindowTabs);
 }
 
 export async function resolvePopupRuntimeStatus(
   tab: chrome.tabs.Tab | null,
   persistedState: PersistedState
 ): Promise<RuntimeStatusSnapshot> {
-  if (typeof tab?.id !== 'number' || !isSupportedTab(tab)) {
+  if (typeof tab?.id !== 'number' || !(await hasSiteAccess(tab.url))) {
     return buildFallbackRuntimeStatus(persistedState, {
       isSupportedPage: false,
       isDocumentVisible: false,
@@ -99,11 +104,18 @@ export async function resolvePopupRuntimeStatus(
   }
 
   const runtimeStatus = await requestRuntimeStatusSnapshot(tab.id);
-  return runtimeStatus ?? buildFallbackRuntimeStatus(persistedState, { isSupportedPage: true });
+  return runtimeStatus ??
+    buildFallbackRuntimeStatus(persistedState, {
+      isSupportedPage: true,
+      isDocumentVisible: false,
+      isActiveReading: false,
+      activeReadingTimeMs: 0,
+      nextEligibleReminderAt: null
+    });
 }
 
 export async function resolveOptionsRuntimeStatus(persistedState: PersistedState): Promise<RuntimeStatusSnapshot> {
-  const tab = await findPreferredWeReadTab();
+  const tab = await findPreferredSupportedTab();
   if (typeof tab?.id !== 'number') {
     return buildFallbackRuntimeStatus(persistedState, {
       isSupportedPage: false,
@@ -115,5 +127,12 @@ export async function resolveOptionsRuntimeStatus(persistedState: PersistedState
   }
 
   const runtimeStatus = await requestRuntimeStatusSnapshot(tab.id);
-  return runtimeStatus ?? buildFallbackRuntimeStatus(persistedState, { isSupportedPage: true });
+  return runtimeStatus ??
+    buildFallbackRuntimeStatus(persistedState, {
+      isSupportedPage: true,
+      isDocumentVisible: false,
+      isActiveReading: false,
+      activeReadingTimeMs: 0,
+      nextEligibleReminderAt: null
+    });
 }

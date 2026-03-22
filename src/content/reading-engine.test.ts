@@ -25,6 +25,7 @@ function createMockDeps(overrides: Partial<ReadingEngineDeps> = {}): ReadingEngi
     }),
     recordReminderAudioDebug: vi.fn(),
     reportToolbarIconState: vi.fn().mockResolvedValue(undefined),
+    getDomain: () => 'weread.qq.com',
     getBookTitle: () => '测试书名',
     getReminderIntervalMs: () => 20 * 60_000,
     getReminderPresentation: () => 'fullscreen',

@@ -104,7 +104,7 @@ describe('buildStatsSummary', () => {
 
     const summary = buildReminderStatusSummary(state, new Date('2026-03-13T14:30:00+08:00').getTime());
 
-    expect(summary.statusExplanationLabel).toBe('当前页不是微信读书阅读页');
+    expect(summary.statusExplanationLabel).toBe('当前页面未启用护眼提醒');
     expect(summary.countdownAdvancing).toBe(false);
   });
 });
