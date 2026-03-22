@@ -51,13 +51,68 @@
         background: #fff8ee;
       }
 
-      .runtime-status h2 {
-        margin: 0 0 8px;
+      .section-toggle {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        cursor: pointer;
+        list-style: none;
       }
 
-      .runtime-status p {
-        margin: 0 0 12px;
+      .section-toggle::-webkit-details-marker {
+        display: none;
+      }
+
+      .section-toggle-copy {
+        display: grid;
+        gap: 4px;
+      }
+
+      .section-toggle-copy strong {
+        font-size: 24px;
+        line-height: 1.2;
+      }
+
+      .section-toggle-note {
         color: #5f4f3f;
+      }
+
+      .toggle-meta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex-shrink: 0;
+        color: #6f5b47;
+        font-size: 13px;
+      }
+
+      .toggle-meta::after {
+        content: '▾';
+        font-size: 14px;
+        transition: transform 180ms ease;
+      }
+
+      details[open] > .section-toggle .toggle-meta::after {
+        transform: rotate(180deg);
+      }
+
+      .details-body {
+        margin-top: 16px;
+      }
+
+      .runtime-diagnostics .section-toggle-copy strong {
+        font-size: 22px;
+      }
+
+      .runtime-diagnostics .section-toggle-note {
+        font-size: 15px;
+      }
+
+      .status-glance {
+        margin-top: -4px;
+        margin-bottom: 24px;
+        font-size: 14px;
       }
 
       .status-list {
@@ -97,6 +152,10 @@
 
       .settings h2 {
         margin: 0 0 12px;
+      }
+
+      details.settings > .details-body .setting:first-child {
+        margin-top: 4px;
       }
 
       .setting {
@@ -423,6 +482,12 @@
 
       button.secondary {
         background: #d1495b;
+      }
+
+      button.tertiary {
+        background: rgba(255, 255, 255, 0.9);
+        color: #2d6a4f;
+        border: 1px solid rgba(45, 106, 79, 0.22);
       }
 
       button:disabled {

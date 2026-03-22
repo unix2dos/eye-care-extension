@@ -218,12 +218,6 @@ document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
   - 阅读状态
   - 当前状态解释
   - 下次提醒
-  - 页面支持
-  - 页面可见
-  - 当前计时
-  - 最近操作
-  - 倒计时推进
-  - 版本预览区块
   - 提醒模式设置
   - 提醒间隔设置
   - 语音开关
@@ -232,7 +226,10 @@ document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
   - 最近 7 / 30 天范围切换或锁态说明
   - PDF 导出或锁态说明
   - 已启用站点列表
-  - 导出 CSV
+  - `运行诊断` 折叠区
+  - `版本预览` 折叠区
+  - `数据管理` 区块
+  - 导出原始数据 CSV
 
 ## 16. 已启用站点管理
 
@@ -271,7 +268,7 @@ document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
 ## 18. 版本预览与付费墙
 
 1. 打开扩展选项页
-2. 观察 `版本预览` 区块的默认状态
+2. 滚动到页面下方并展开 `版本预览`
 3. 在免费版下查看提醒间隔、报告范围和 PDF 按钮
 4. 切换到 `专业版预览`
 5. 再回到免费版
@@ -291,6 +288,23 @@ document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
 - 如果专业版下先设置了自定义间隔，再切回免费版：
   - 间隔会回退到预设值
   - 不会保留一个免费版不可编辑的脏状态
+
+## 18A. 运行诊断折叠区
+
+1. 打开扩展选项页
+2. 观察首屏的状态解释文案
+3. 展开 `运行诊断`
+
+验收标准：
+
+- 首屏仍能直接看到当前为什么在计时或暂停
+- `运行诊断` 默认是收起的
+- 展开后才显示：
+  - 页面支持
+  - 页面可见
+  - 当前计时
+  - 最近操作
+  - 倒计时推进
 
 ## 19. reduced-motion 退化
 
@@ -344,20 +358,22 @@ document.documentElement.dataset.wereadEyeCareReminderAudioErrorMessage
 
 ## 22. 清空数据
 
-1. 在扩展选项页点击 `清空本地统计`
-2. 返回 popup 再查看状态
+1. 在扩展选项页点击 `清空本地数据`
+2. 在浏览器确认框中选择确认
+3. 返回 popup 再查看状态
 
 验收标准：
 
+- 点击后会先出现确认提示，而不是直接清空
 - 今日阅读时长清零
 - 今日提醒次数清零
 - 当前累计状态清零
 - 提醒设置恢复默认值
 - 重新开始阅读后，从新的累计周期开始
 
-## 23. CSV 导出
+## 23. 原始数据 CSV 导出
 
-1. 在扩展选项页点击 `导出 CSV`
+1. 在扩展选项页的 `数据管理` 区块点击 `导出原始数据 CSV`
 2. 打开下载得到的文件
 
 验收标准：

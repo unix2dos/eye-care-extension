@@ -18,6 +18,7 @@ import type { ReminderSettings, SubscriptionPlan } from '../shared/types';
 import { buildExportFilename, downloadCsv } from './export';
 import { buildEyeCareReportModel, type ReportRangeDays } from './report-model';
 import { exportEyeCareReportPdf } from './report-pdf';
+import { RESET_DATA_LABEL, shouldResetLocalData } from './reset';
 import { buildEnabledSitesMarkup, loadEnabledSites, removeEnabledSite } from './sites';
 import { buildOptionsViewModel } from './view-model';
 
@@ -135,6 +136,36 @@ function buildPlanFeatureMarkup(plan: SubscriptionPlan): string {
   `;
 }
 
+function buildPlanPreviewMarkup(plan: SubscriptionPlan): string {
+  return `
+    <details class="settings plan-preview">
+      <summary class="section-toggle">
+        <span class="section-toggle-copy">
+          <strong>版本预览</strong>
+          <span class="section-toggle-note">用于本地验证免费版 / 专业版的功能锁态</span>
+        </span>
+        <span class="toggle-meta">${SUBSCRIPTION_PLAN_LABELS[plan]}</span>
+      </summary>
+      <div class="details-body">
+        <label class="setting">
+          <span>当前版本</span>
+          <select id="subscription-plan">
+            ${Object.entries(SUBSCRIPTION_PLAN_LABELS)
+              .map(([entryPlan, label]) => {
+                const selected = plan === entryPlan ? 'selected' : '';
+                return `<option value="${entryPlan}" ${selected}>${label}</option>`;
+              })
+              .join('')}
+          </select>
+        </label>
+        <p class="setting-note">${buildPlanDescription(plan)}</p>
+        <p class="setting-note">真实支付接入尚未上线，这里先用本地切换验证付费能力边界。</p>
+        ${buildPlanFeatureMarkup(plan)}
+      </div>
+    </details>
+  `;
+}
+
 function buildHealthNoticeMarkup(): string {
   return `
     <section class="settings health-notice">
@@ -170,6 +201,41 @@ function buildReminderSummary(settings: ReminderSettings): string {
   }
 
   return `当你在已启用站点持续活跃用眼累计 ${intervalMinutes} 分钟时，扩展会弹出提醒${audioSummary}。`;
+}
+
+function buildRuntimeDiagnosticsMarkup(viewModel: ReturnType<typeof buildOptionsViewModel>): string {
+  return `
+    <details class="runtime-status runtime-diagnostics">
+      <summary class="section-toggle">
+        <span class="section-toggle-copy">
+          <strong>运行诊断</strong>
+          <span data-status-explanation class="section-toggle-note">${viewModel.statusExplanationLabel}</span>
+        </span>
+        <span class="toggle-meta">高级状态</span>
+      </summary>
+      <div class="details-body">
+        <dl id="runtime-status-list" class="status-list">
+          ${viewModel.runtimeDetails
+            .map(({ label, value }) => `<div><dt>${label}</dt><dd>${value}</dd></div>`)
+            .join('')}
+        </dl>
+      </div>
+    </details>
+  `;
+}
+
+function buildDataManagementMarkup(): string {
+  return `
+    <section class="settings data-management">
+      <h2>数据管理</h2>
+      <p class="setting-note">报告 PDF 适合打印或分享；CSV 适合备份和自行分析原始统计数据。</p>
+      <div class="actions">
+        <button id="export" class="tertiary">导出原始数据 CSV</button>
+        <button id="reset" class="secondary">${RESET_DATA_LABEL}</button>
+      </div>
+      <p class="setting-note">CSV 包含当前版本实际保存的数据：日期、域名、书名（如有）、阅读分钟数、提醒次数。</p>
+    </section>
+  `;
 }
 
 function buildReportMarkup(report: ReturnType<typeof buildEyeCareReportModel>, plan: SubscriptionPlan): string {
@@ -254,7 +320,7 @@ function buildReportMarkup(report: ReturnType<typeof buildEyeCareReportModel>, p
             </option>
           </select>
           <button id="export-report" ${pdfExportEnabled ? '' : 'disabled'}>
-            ${pdfExportEnabled ? '导出 PDF 报告' : '导出 PDF 报告（专业版）'}
+            ${pdfExportEnabled ? '导出报告 PDF' : '导出报告 PDF（专业版）'}
           </button>
         </div>
       </div>
@@ -298,32 +364,7 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
         <div class="metric"><div>阅读状态</div><strong id="reading-status-value">${viewModel.readingStatusLabel}</strong></div>
         <div class="metric"><div>下次提醒</div><strong id="next-reminder-value">${viewModel.nextReminderLabel}</strong></div>
       </div>
-      <section class="runtime-status">
-        <h2>当前状态</h2>
-        <p id="status-explanation">${viewModel.statusExplanationLabel}</p>
-        <dl id="runtime-status-list" class="status-list">
-          ${viewModel.runtimeDetails
-            .map(({ label, value }) => `<div><dt>${label}</dt><dd>${value}</dd></div>`)
-            .join('')}
-        </dl>
-      </section>
-      <section class="settings plan-preview">
-        <h2>版本预览</h2>
-        <label class="setting">
-          <span>当前版本</span>
-          <select id="subscription-plan">
-            ${Object.entries(SUBSCRIPTION_PLAN_LABELS)
-              .map(([plan, label]) => {
-                const selected = state.plan === plan ? 'selected' : '';
-                return `<option value="${plan}" ${selected}>${label}</option>`;
-              })
-              .join('')}
-          </select>
-        </label>
-        <p class="setting-note">${buildPlanDescription(state.plan)}</p>
-        <p class="setting-note">真实支付接入尚未上线，这里先用本地切换验证付费能力边界。</p>
-        ${buildPlanFeatureMarkup(state.plan)}
-      </section>
+      <p data-status-explanation class="settings-status status-glance">${viewModel.statusExplanationLabel}</p>
       <section class="settings">
         <h2>提醒设置</h2>
         <label class="setting">
@@ -377,6 +418,7 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
         </label>
         <p id="settings-status" class="settings-status">${settingsStatusMessage}</p>
       </section>
+      ${buildReportMarkup(report, state.plan)}
       <section class="enabled-sites">
         <h2>已启用站点</h2>
         <p>这里展示通过 popup 单独授权过的站点，你可以随时撤销。</p>
@@ -385,13 +427,10 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
         </div>
       </section>
       ${buildHealthNoticeMarkup()}
-      ${buildReportMarkup(report, state.plan)}
-      <div class="actions">
-        <button id="export">导出 CSV</button>
-        <button id="reset" class="secondary">清空本地统计</button>
-      </div>
+      ${buildRuntimeDiagnosticsMarkup(viewModel)}
+      ${buildPlanPreviewMarkup(state.plan)}
+      ${buildDataManagementMarkup()}
       <p>${buildReminderSummary(state.settings)}</p>
-      <p>导出文件包含当前版本实际保存的数据：日期、域名、书名（如有）、阅读分钟数、提醒次数。</p>
     </section>
   `;
 
@@ -431,7 +470,6 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
     const latestViewModel = buildOptionsViewModel(latestState, latestRuntimeStatus, today(), Date.now());
     const readingStatusNode = document.getElementById('reading-status-value');
     const nextReminderNode = document.getElementById('next-reminder-value');
-    const explanationNode = document.getElementById('status-explanation');
     const runtimeListNode = document.getElementById('runtime-status-list');
 
     if (readingStatusNode) {
@@ -442,9 +480,9 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
       nextReminderNode.textContent = latestViewModel.nextReminderLabel;
     }
 
-    if (explanationNode) {
-      explanationNode.textContent = latestViewModel.statusExplanationLabel;
-    }
+    document.querySelectorAll<HTMLElement>('[data-status-explanation]').forEach((node) => {
+      node.textContent = latestViewModel.statusExplanationLabel;
+    });
 
     if (runtimeListNode) {
       runtimeListNode.innerHTML = latestViewModel.runtimeDetails
@@ -464,7 +502,7 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
   document.getElementById('subscription-plan')?.addEventListener('change', async (event) => {
     const plan = parseSubscriptionPlan((event.currentTarget as HTMLSelectElement).value);
     await storage.savePlan(plan);
-    await render(plan === 'pro' ? '已切换到专业版预览。' : '已切换到免费版预览。');
+    await render();
   });
 
   document.getElementById('audio-enabled')?.addEventListener('change', () => {
@@ -505,7 +543,7 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
       if (reportStatusNode) {
         reportStatusNode.textContent = latestReport.isEmpty
           ? `已导出空报告页：${filename}`
-          : `PDF 报告已导出：${filename}`;
+          : `报告 PDF 已导出：${filename}`;
       }
     } catch {
       if (reportStatusNode) {
@@ -522,6 +560,10 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
   });
 
   document.getElementById('reset')?.addEventListener('click', async () => {
+    if (!shouldResetLocalData(window.confirm.bind(window))) {
+      return;
+    }
+
     await storage.resetState();
     await render('本地统计与提醒设置都已恢复默认值。');
   });

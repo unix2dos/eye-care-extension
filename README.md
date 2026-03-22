@@ -4,7 +4,7 @@
 
 Eye Care Reminder is a Chrome extension that tracks active reading time, triggers local break reminders, and keeps all settings and stats inside the current browser profile.
 
-![WeRead Eye Care popup overview](docs/store/images/zh/01-popup.png)
+![Eye Care Reminder popup overview](docs/store/images/zh/01-popup.png)
 
 下载地址： https://chromewebstore.google.com/detail/weread-eye-care/ikcfjpodlbbmcemmbhokoenehlkhdegh
 
@@ -33,7 +33,7 @@ Eye Care Reminder is a Chrome extension that tracks active reading time, trigger
 - `即时状态可见`
   `popup` 显示今日阅读、今日提醒、阅读状态、状态解释和下次提醒倒计时，工具栏显示 `读 / 停` 状态。
 - `本地统计与导出`
-  统计保存在 `chrome.storage.local`，支持导出按日期、域名和书名汇总的 CSV。
+  统计保存在 `chrome.storage.local`；报告区导出的是可阅读的 PDF，数据管理区导出的是按日期、域名和书名汇总的原始 CSV。
 - `健康报告`
   免费版显示最近 `7` 天的基础报告；专业版预览解锁最近 `30` 天趋势和中文 PDF 导出。
 - `已启用站点可管理`
@@ -45,13 +45,13 @@ Eye Care Reminder is a Chrome extension that tracks active reading time, trigger
 
 ![Popup overview](docs/store/images/zh/01-popup.png)
 
-弹窗集中展示今日阅读、当前计时状态和下一次提醒倒计时，并提供当前站点启用、提醒预览和设置入口。
+弹窗集中展示今日阅读、当前状态解释和下一次提醒，并把“微信读书默认支持 + 普通网页按站点启用”的边界直接说清楚。
 
 ### 设置页
 
 ![Options page](docs/store/images/zh/02-options.png)
 
-设置页用于切换本地版本预览、提醒模式、标准模式间隔、语音和提醒呈现方式，同时支持查看健康报告、导出 CSV、清空统计和管理已启用站点；专业版预览下还会解锁 PDF 导出和 30 天趋势。
+设置页现在先展示提醒设置和健康报告，再往下放数据管理与站点管理，信息层级比旧版更清楚；专业版预览下还会解锁 PDF 导出和 30 天趋势。
 
 设置页和 popup 也会明确提示：扩展只提供日常休息提醒，不替代医生诊疗或处方方案；如果医生给了更具体的用眼计划，应优先遵循医生建议。
 
@@ -59,7 +59,7 @@ Eye Care Reminder is a Chrome extension that tracks active reading time, trigger
 
 ![Full-screen reminder](docs/store/images/zh/03-reminder.png)
 
-当活跃阅读累计达到提醒间隔时，扩展会在页面内显示提醒遮罩，并播放内置语音提示；在 `20-20-20` 模式下，关闭按钮会先经历 `20 秒` 倒计时。免费版显示文字版休息引导，专业版预览显示动画引导。
+当活跃阅读累计达到提醒间隔时，扩展会在页面内显示提醒遮罩，并播放内置语音提示；在 `20-20-20` 模式下，关闭按钮会先经历 `20 秒` 倒计时，并跟着休息引导步骤推进。免费版显示文字版休息引导，专业版预览显示动画引导。
 
 ## 工作方式
 

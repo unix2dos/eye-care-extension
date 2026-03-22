@@ -111,17 +111,17 @@ The repository keeps the final PNG screenshots. The intermediate HTML fixtures a
 ### Screenshot Captions
 
 1. Popup 总览
-   - 标题：打开弹窗，马上看到阅读节奏
-   - 说明：今日阅读、当前计时和下次提醒倒计时都集中在一个轻量面板里。
+   - 标题：默认支持微信读书，也能按站点扩展到普通网页
+   - 说明：今日阅读、状态解释和下次提醒都集中在一个轻量面板里。
 2. 设置页
-   - 标题：把提醒节奏调到顺手
-   - 说明：提醒间隔、语音开关和全屏提醒都能在设置页直接调整。
+   - 标题：把设置、报告和数据管理分成清晰层级
+   - 说明：首屏先处理提醒设置和健康报告，数据管理与站点管理放到下面。
 3. 全屏提醒
-   - 标题：到点后直接打断阅读，提醒你休息
-   - 说明：提醒不会自动消失，必须手动确认后才会恢复页面交互。
+   - 标题：20-20-20 会带着你完成一个真正的短休息
+   - 说明：倒计时结束前不能关闭，并按步骤提示远眺、转动视线和呼吸放松。
 4. 工具栏状态
-   - 标题：不用打开弹窗，也知道现在是在读还是已停
-   - 说明：当前活动标签页处于阅读中时显示“读”，暂停时显示“停”。
+   - 标题：不用打开弹窗，也知道当前标签页是否还在计时
+   - 说明：已启用站点活跃阅读时显示“读”，暂停或未计时时显示“停”。
 
 ## English Localized Listing
 
@@ -196,17 +196,17 @@ Health notice: this extension is a daily break-reminder tool only and does not r
 ### Screenshot Captions
 
 1. Popup Overview
-   - Title: Open the popup and read the room instantly
-   - Copy: See today’s reading time, the live session timer, and your next break countdown in one glance.
+   - Title: WeRead works immediately, and any normal page can be enabled site by site
+   - Copy: Reading time, status reasoning, and the next break all stay visible in one small panel.
 2. Settings
-   - Title: Tune the reminder flow to your own pace
-   - Copy: Adjust the interval, voice playback, and full-screen reminders without leaving the extension.
+   - Title: Settings, reports, and data actions now live in a clearer hierarchy
+   - Copy: Reminder controls stay on top, while reports and raw-data actions are grouped below.
 3. Full-screen Reminder
-   - Title: A break overlay that is hard to ignore
-   - Copy: The reminder covers the page until you acknowledge it, so the break actually happens.
+   - Title: The 20-20-20 flow guides a real short break
+   - Copy: A countdown, guided steps, and a delayed close button make the break harder to skip.
 4. Toolbar Badge
-   - Title: Know whether you are reading or paused without opening the popup
-   - Copy: The active tab shows a read badge while counting and a pause badge when it stops.
+   - Title: Know whether the current tab is still counting without opening the popup
+   - Copy: Enabled active tabs show READ; paused or stopped tabs show PAUSE.
 
 ## Regenerate Screenshots
 
