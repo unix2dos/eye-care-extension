@@ -1,11 +1,11 @@
 import { REQUEST_RUNTIME_STATUS_COMMAND, TOOLBAR_ICON_STATE_COMMAND } from '../shared/messages';
 import { STORAGE_KEY } from '../shared/storage';
-import type { ReminderSettings, RuntimeStatusSnapshot } from '../shared/types';
+import type { ReminderSettings, RuntimeStatusSnapshot, SubscriptionPlan } from '../shared/types';
 import type { ReminderOverlayPresentation } from './reminder/overlay';
 
 export interface MessageBridgeDeps {
   storage: {
-    loadState(): Promise<{ settings: ReminderSettings }>;
+    loadState(): Promise<{ settings: ReminderSettings; plan: SubscriptionPlan }>;
   };
   engine: {
     syncSchedule(now: number): Promise<{
@@ -24,7 +24,7 @@ export interface MessageBridgeDeps {
     show(message: string, mode: 'preview' | 'reminder', presentation: ReminderOverlayPresentation): Promise<void>;
   };
   playReminder: () => Promise<unknown>;
-  applySettings: (settings: ReminderSettings) => Promise<void>;
+  applyPersistedState: (settings: ReminderSettings, plan: SubscriptionPlan) => Promise<void>;
   previewReminder: () => Promise<void>;
   doc: Pick<Document, 'visibilityState'>;
   inactivityTimeoutMs: number;
@@ -69,7 +69,7 @@ export function installMessageBridge(deps: MessageBridgeDeps): void {
 
     void (async () => {
       const latest = await deps.storage.loadState();
-      await deps.applySettings(latest.settings);
+      await deps.applyPersistedState(latest.settings, latest.plan);
     })();
   });
 }

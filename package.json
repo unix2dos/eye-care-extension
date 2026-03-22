@@ -13,5 +13,8 @@
     "jsdom": "^28.1.0",
     "typescript": "^5.9.3",
     "vitest": "^4.1.0"
+  },
+  "dependencies": {
+    "jspdf": "^4.2.1"
   }
 }

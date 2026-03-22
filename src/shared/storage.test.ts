@@ -51,6 +51,7 @@ describe('AppStorage', () => {
       activeReadingTimeMs: 240_000,
       isActiveReading: true,
       nextEligibleReminderAt: 208_000,
+      plan: 'free',
       settings: {
         reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
@@ -77,6 +78,7 @@ describe('AppStorage', () => {
       activeReadingTimeMs: 0,
       isActiveReading: false,
       nextEligibleReminderAt: null,
+      plan: 'free',
       settings: {
         reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
@@ -94,6 +96,7 @@ describe('AppStorage', () => {
       activeReadingTimeMs: 180_000,
       isActiveReading: true,
       nextEligibleReminderAt: 999_000,
+      plan: 'free',
       settings: {
         reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
@@ -137,6 +140,7 @@ describe('AppStorage', () => {
       activeReadingTimeMs: 0,
       isActiveReading: false,
       nextEligibleReminderAt: null,
+      plan: 'free',
       settings: {
         reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
@@ -227,11 +231,66 @@ describe('AppStorage', () => {
     });
 
     await expect(storage.loadState()).resolves.toMatchObject({
+      plan: 'free',
       settings: {
         reminderMode: 'standard',
         reminderIntervalMinutes: 30,
         audioEnabled: false,
         fullscreenReminder: false
+      }
+    });
+  });
+
+  it('keeps a valid custom interval for the pro plan', async () => {
+    const storageArea = new MemoryStorageArea();
+    const storage = new AppStorage(storageArea);
+
+    await storage.saveState({
+      stats: createEmptyStatsState(),
+      activeReadingTimeMs: 0,
+      isActiveReading: false,
+      nextEligibleReminderAt: null,
+      plan: 'pro',
+      settings: {
+        reminderMode: 'standard',
+        reminderIntervalMinutes: 45,
+        audioEnabled: true,
+        fullscreenReminder: true
+      }
+    } as PersistedState);
+
+    await expect(storage.loadState()).resolves.toMatchObject({
+      plan: 'pro',
+      settings: {
+        reminderIntervalMinutes: 45
+      }
+    });
+  });
+
+  it('downgrades custom intervals back to the preset default when the plan switches to free', async () => {
+    const storageArea = new MemoryStorageArea();
+    const storage = new AppStorage(storageArea);
+
+    await storage.saveState({
+      stats: createEmptyStatsState(),
+      activeReadingTimeMs: 0,
+      isActiveReading: false,
+      nextEligibleReminderAt: null,
+      plan: 'pro',
+      settings: {
+        reminderMode: 'standard',
+        reminderIntervalMinutes: 45,
+        audioEnabled: true,
+        fullscreenReminder: true
+      }
+    } as PersistedState);
+
+    await storage.savePlan('free');
+
+    await expect(storage.loadState()).resolves.toMatchObject({
+      plan: 'free',
+      settings: {
+        reminderIntervalMinutes: 20
       }
     });
   });

@@ -4,10 +4,11 @@ export interface ReminderPolicyConfig {
 }
 
 export type ReminderMode = 'standard' | 'twenty-twenty-twenty';
+export type SubscriptionPlan = 'free' | 'pro';
 
 export interface ReminderSettings {
   reminderMode: ReminderMode;
-  reminderIntervalMinutes: 15 | 20 | 30;
+  reminderIntervalMinutes: number;
   audioEnabled: boolean;
   fullscreenReminder: boolean;
 }
@@ -60,6 +61,7 @@ export interface PersistedState {
   activeReadingTimeMs: number;
   isActiveReading: boolean;
   nextEligibleReminderAt: number | null;
+  plan: SubscriptionPlan;
   settings: ReminderSettings;
 }
 

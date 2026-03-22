@@ -1,6 +1,18 @@
 import { DEFAULT_REMINDER_SETTINGS } from './constants';
+import {
+  DEFAULT_SUBSCRIPTION_PLAN,
+  normalizeSubscriptionPlan,
+  sanitizeReminderSettingsForPlan
+} from './plan';
 import { createEmptyStatsState, normalizeStatsState, trimOldDays } from './stats';
-import type { PersistedState, ReminderMode, ReminderSettings, StatsState, StorageAreaLike } from './types';
+import type {
+  PersistedState,
+  ReminderMode,
+  ReminderSettings,
+  StatsState,
+  StorageAreaLike,
+  SubscriptionPlan
+} from './types';
 
 export const STORAGE_KEY = 'weread-eye-care-state';
 
@@ -10,6 +22,7 @@ function getDefaultState(): PersistedState {
     activeReadingTimeMs: 0,
     isActiveReading: false,
     nextEligibleReminderAt: null,
+    plan: DEFAULT_SUBSCRIPTION_PLAN,
     settings: DEFAULT_REMINDER_SETTINGS
   };
 }
@@ -29,26 +42,42 @@ function normalizeReminderMode(raw: Partial<ReminderSettings>): ReminderMode {
   return DEFAULT_REMINDER_SETTINGS.reminderMode;
 }
 
-function normalizeSettings(stored: unknown): ReminderSettings {
+function normalizeSettings(stored: unknown, plan: SubscriptionPlan): ReminderSettings {
   if (!stored || typeof stored !== 'object') {
-    return DEFAULT_REMINDER_SETTINGS;
+    return sanitizeReminderSettingsForPlan(DEFAULT_REMINDER_SETTINGS, plan);
   }
 
   const raw = stored as Partial<ReminderSettings>;
   const reminderIntervalMinutes =
-    raw.reminderIntervalMinutes === 15 || raw.reminderIntervalMinutes === 20 || raw.reminderIntervalMinutes === 30
+    typeof raw.reminderIntervalMinutes === 'number'
       ? raw.reminderIntervalMinutes
       : DEFAULT_REMINDER_SETTINGS.reminderIntervalMinutes;
 
+  return sanitizeReminderSettingsForPlan(
+    {
+      reminderMode: normalizeReminderMode(raw),
+      reminderIntervalMinutes,
+      audioEnabled:
+        typeof raw.audioEnabled === 'boolean' ? raw.audioEnabled : DEFAULT_REMINDER_SETTINGS.audioEnabled,
+      fullscreenReminder:
+        typeof raw.fullscreenReminder === 'boolean'
+          ? raw.fullscreenReminder
+          : DEFAULT_REMINDER_SETTINGS.fullscreenReminder
+    },
+    plan
+  );
+}
+
+function normalizePersistedState(raw: Partial<PersistedState>): PersistedState {
+  const plan = normalizeSubscriptionPlan(raw.plan);
+
   return {
-    reminderMode: normalizeReminderMode(raw),
-    reminderIntervalMinutes,
-    audioEnabled:
-      typeof raw.audioEnabled === 'boolean' ? raw.audioEnabled : DEFAULT_REMINDER_SETTINGS.audioEnabled,
-    fullscreenReminder:
-      typeof raw.fullscreenReminder === 'boolean'
-        ? raw.fullscreenReminder
-        : DEFAULT_REMINDER_SETTINGS.fullscreenReminder
+    stats: trimOldDays(normalizeStatsState(raw.stats)),
+    activeReadingTimeMs: typeof raw.activeReadingTimeMs === 'number' ? raw.activeReadingTimeMs : 0,
+    isActiveReading: typeof raw.isActiveReading === 'boolean' ? raw.isActiveReading : false,
+    nextEligibleReminderAt: typeof raw.nextEligibleReminderAt === 'number' ? raw.nextEligibleReminderAt : null,
+    plan,
+    settings: normalizeSettings(raw.settings, plan)
   };
 }
 
@@ -57,15 +86,7 @@ function normalizeState(stored: unknown): PersistedState {
     return getDefaultState();
   }
 
-  const raw = stored as Partial<PersistedState>;
-
-  return {
-    stats: trimOldDays(normalizeStatsState(raw.stats)),
-    activeReadingTimeMs: typeof raw.activeReadingTimeMs === 'number' ? raw.activeReadingTimeMs : 0,
-    isActiveReading: typeof raw.isActiveReading === 'boolean' ? raw.isActiveReading : false,
-    nextEligibleReminderAt: typeof raw.nextEligibleReminderAt === 'number' ? raw.nextEligibleReminderAt : null,
-    settings: normalizeSettings(raw.settings)
-  };
+  return normalizePersistedState(stored as Partial<PersistedState>);
 }
 
 export class AppStorage {
@@ -79,7 +100,7 @@ export class AppStorage {
   }
 
   async saveState(state: PersistedState): Promise<void> {
-    await this.storageArea.set({ [STORAGE_KEY]: state });
+    await this.storageArea.set({ [STORAGE_KEY]: normalizePersistedState(state) });
   }
 
   private mutate(fn: (state: PersistedState) => PersistedState): Promise<void> {
@@ -105,7 +126,22 @@ export class AppStorage {
   }
 
   async saveSettings(settings: ReminderSettings): Promise<void> {
-    return this.mutate((state) => ({ ...state, settings }));
+    return this.mutate((state) => ({
+      ...state,
+      settings: sanitizeReminderSettingsForPlan(settings, state.plan)
+    }));
+  }
+
+  async savePlan(plan: SubscriptionPlan): Promise<void> {
+    return this.mutate((state) => {
+      const normalizedPlan = normalizeSubscriptionPlan(plan);
+
+      return {
+        ...state,
+        plan: normalizedPlan,
+        settings: sanitizeReminderSettingsForPlan(state.settings, normalizedPlan)
+      };
+    });
   }
 
   async resetState(): Promise<void> {

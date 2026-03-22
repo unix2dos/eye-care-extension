@@ -1,8 +1,9 @@
 import { DEFAULT_POLICY, DEFAULT_REMINDER_SETTINGS } from '../shared/constants';
 import { TOOLBAR_ICON_STATE_COMMAND } from '../shared/messages';
+import { canUseBreakGuideAnimation, sanitizeReminderSettingsForPlan } from '../shared/plan';
 import { getEffectiveReminderIntervalMinutes, getReminderCountdownSeconds } from '../shared/reminder-mode';
 import { AppStorage, STORAGE_KEY } from '../shared/storage';
-import type { ReminderSettings } from '../shared/types';
+import type { ReminderSettings, SubscriptionPlan } from '../shared/types';
 import { ActiveReadingSession } from './activity/session';
 import { createPreviewReminderRunner } from './preview';
 import {
@@ -51,17 +52,23 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   const isWeReadPage = isSupportedWeReadUrl(url);
   const domain = url.hostname || null;
 
-  const overlay = new ReminderOverlay(doc);
   const storage = new AppStorage();
   const persisted = await storage.loadState();
+  let plan: SubscriptionPlan = persisted.plan;
+  const overlay = new ReminderOverlay(doc, {
+    supportsGuideAnimation: () => canUseBreakGuideAnimation(plan)
+  });
   const session = new ActiveReadingSession(DEFAULT_POLICY.inactivityTimeoutMs);
   const scheduler = new ActiveReadingReminderScheduler(
-    getReminderIntervalMs(persisted.settings),
+    getReminderIntervalMs(sanitizeReminderSettingsForPlan(persisted.settings, plan)),
     persisted.activeReadingTimeMs
   );
   const playReminderAudio = createReminderAudioPlayer();
 
-  let settings: ReminderSettings = persisted.settings ?? DEFAULT_REMINDER_SETTINGS;
+  let settings: ReminderSettings = sanitizeReminderSettingsForPlan(
+    persisted.settings ?? DEFAULT_REMINDER_SETTINGS,
+    plan
+  );
 
   const reportToolbarIconState = async (isActiveReading: boolean): Promise<void> => {
     try {
@@ -113,11 +120,14 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
     }
   );
 
-  const applySettings = async (nextSettings: ReminderSettings): Promise<void> => {
-    if (areSettingsEqual(settings, nextSettings)) {
+  const applyPersistedState = async (nextSettings: ReminderSettings, nextPlan: SubscriptionPlan): Promise<void> => {
+    plan = nextPlan;
+    const normalizedSettings = sanitizeReminderSettingsForPlan(nextSettings, plan);
+
+    if (areSettingsEqual(settings, normalizedSettings)) {
       return;
     }
-    settings = nextSettings;
+    settings = normalizedSettings;
     scheduler.setReminderIntervalMs(getReminderIntervalMs(settings));
     await engine.syncSchedule(Date.now());
   };
@@ -153,7 +163,7 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
     session,
     overlay,
     playReminder,
-    applySettings,
+    applyPersistedState,
     previewReminder,
     doc,
     inactivityTimeoutMs: DEFAULT_POLICY.inactivityTimeoutMs

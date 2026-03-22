@@ -1,4 +1,5 @@
 import { AppStorage } from '../shared/storage';
+import { getPopupHealthDisclaimer } from '../shared/disclaimer';
 import { getActiveTab, resolvePopupRuntimeStatus } from '../shared/runtime-status';
 import { resolveTabSiteAccess, type TabSiteAccessState } from '../shared/site-access';
 import { buildReminderStatusSummary, buildStatsSummary } from '../ui/summary';
@@ -103,6 +104,10 @@ async function render(statusHint?: string): Promise<void> {
         <div class="metric"><span>下次提醒</span><strong id="next-reminder-value">${inactiveStatus.nextReminderLabel}</strong></div>
       </div>
       <p class="hint" id="status-explanation">${statusHint ?? inactiveStatus.statusExplanationLabel}</p>
+      <div class="notice">
+        <strong>健康说明</strong>
+        <p>${getPopupHealthDisclaimer()}</p>
+      </div>
       <div class="actions">
         ${!siteAccess.hasAccess && siteAccess.isInjectable ? '<button id="enable-site">在此站点启用护眼提醒</button>' : ''}
         <button id="preview-reminder" ${previewState.enabled ? '' : 'disabled'}>预览提醒</button>

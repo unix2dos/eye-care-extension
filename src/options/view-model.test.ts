@@ -20,6 +20,7 @@ describe('buildOptionsViewModel', () => {
       activeReadingTimeMs: 5 * 60_000 + 12_000,
       isActiveReading: true,
       nextEligibleReminderAt: new Date('2026-03-13T14:32:18+08:00').getTime(),
+      plan: 'free',
       settings: {
         reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
@@ -64,6 +65,7 @@ describe('buildOptionsViewModel', () => {
       activeReadingTimeMs: 12 * 60_000,
       isActiveReading: false,
       nextEligibleReminderAt: null,
+      plan: 'free',
       settings: {
         reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
