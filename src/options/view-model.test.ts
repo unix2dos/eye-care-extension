@@ -21,6 +21,7 @@ describe('buildOptionsViewModel', () => {
       isActiveReading: true,
       nextEligibleReminderAt: new Date('2026-03-13T14:32:18+08:00').getTime(),
       settings: {
+        reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
         audioEnabled: true,
         fullscreenReminder: true
@@ -64,6 +65,7 @@ describe('buildOptionsViewModel', () => {
       isActiveReading: false,
       nextEligibleReminderAt: null,
       settings: {
+        reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
         audioEnabled: true,
         fullscreenReminder: true

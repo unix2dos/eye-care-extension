@@ -52,6 +52,7 @@ describe('AppStorage', () => {
       isActiveReading: true,
       nextEligibleReminderAt: 208_000,
       settings: {
+        reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
         audioEnabled: true,
         fullscreenReminder: true
@@ -77,6 +78,7 @@ describe('AppStorage', () => {
       isActiveReading: false,
       nextEligibleReminderAt: null,
       settings: {
+        reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
         audioEnabled: true,
         fullscreenReminder: true
@@ -93,6 +95,7 @@ describe('AppStorage', () => {
       isActiveReading: true,
       nextEligibleReminderAt: 999_000,
       settings: {
+        reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
         audioEnabled: true,
         fullscreenReminder: true
@@ -101,6 +104,7 @@ describe('AppStorage', () => {
 
     await storage.saveState(state);
     await storage.saveSettings({
+      reminderMode: 'standard',
       reminderIntervalMinutes: 30,
       audioEnabled: false,
       fullscreenReminder: false
@@ -109,6 +113,7 @@ describe('AppStorage', () => {
     await expect(storage.loadState()).resolves.toEqual({
       ...state,
       settings: {
+        reminderMode: 'standard',
         reminderIntervalMinutes: 30,
         audioEnabled: false,
         fullscreenReminder: false
@@ -133,6 +138,7 @@ describe('AppStorage', () => {
       isActiveReading: false,
       nextEligibleReminderAt: null,
       settings: {
+        reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
         audioEnabled: true,
         fullscreenReminder: true
@@ -201,6 +207,31 @@ describe('AppStorage', () => {
           },
           domains: {}
         }
+      }
+    });
+  });
+
+  it('infers standard mode for legacy stored settings that predate reminderMode', async () => {
+    const storageArea = new MemoryStorageArea();
+    const storage = new AppStorage(storageArea);
+
+    await storageArea.set({
+      'weread-eye-care-state': {
+        stats: createEmptyStatsState(),
+        settings: {
+          reminderIntervalMinutes: 30,
+          audioEnabled: false,
+          fullscreenReminder: false
+        }
+      }
+    });
+
+    await expect(storage.loadState()).resolves.toMatchObject({
+      settings: {
+        reminderMode: 'standard',
+        reminderIntervalMinutes: 30,
+        audioEnabled: false,
+        fullscreenReminder: false
       }
     });
   });

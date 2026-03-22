@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { ReminderOverlay } from './overlay';
 
@@ -63,5 +63,39 @@ describe('ReminderOverlay', () => {
 
     button?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     await dismissed;
+  });
+
+  it('prevents dismissal until the countdown finishes', async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '';
+
+    try {
+      const overlay = new ReminderOverlay(document);
+      const dismissed = overlay.show('请看远处 20 秒', 'reminder', 'fullscreen', 3);
+      const root = document.getElementById('weread-eye-care-overlay') as HTMLDivElement;
+      const button = root.querySelector('button') as HTMLButtonElement;
+
+      expect(button.disabled).toBe(true);
+      expect(button.textContent).toBe('3 秒后可关闭');
+      expect(root.textContent).toContain('请先看远处 3 秒');
+
+      button.click();
+      expect(overlay.isVisible()).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(2_000);
+      expect(button.disabled).toBe(true);
+      expect(button.textContent).toBe('1 秒后可关闭');
+
+      await vi.advanceTimersByTimeAsync(1_000);
+      expect(button.disabled).toBe(false);
+      expect(button.textContent).toBe('我知道了');
+
+      button.click();
+      await dismissed;
+
+      expect(overlay.isVisible()).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

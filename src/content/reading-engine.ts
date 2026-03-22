@@ -13,7 +13,12 @@ export interface ReadingEngineDeps {
     saveStats(stats: StatsState): Promise<void>;
   };
   overlay: {
-    show(message: string, mode: 'reminder', presentation: ReminderOverlayPresentation): Promise<void>;
+    show(
+      message: string,
+      mode: 'reminder',
+      presentation: ReminderOverlayPresentation,
+      countdownSeconds?: number
+    ): Promise<void>;
     isBlockingReminderVisible(): boolean;
   };
   playReminder: () => Promise<ReminderAudioDebugInfo>;
@@ -24,6 +29,7 @@ export interface ReadingEngineDeps {
   getReminderIntervalMs: () => number;
   getReminderPresentation: () => ReminderOverlayPresentation;
   getReminderSpeech: () => string;
+  getReminderCountdownSeconds: () => number | null;
   isAudioEnabled: () => boolean;
   doc: Pick<Document, 'visibilityState'>;
 }
@@ -154,7 +160,8 @@ export class ReadingEngine {
     const dismissed = this.deps.overlay.show(
       this.deps.getReminderSpeech(),
       'reminder',
-      this.deps.getReminderPresentation()
+      this.deps.getReminderPresentation(),
+      this.deps.getReminderCountdownSeconds() ?? undefined
     );
     const debugInfo = this.deps.isAudioEnabled()
       ? await this.deps.playReminder()

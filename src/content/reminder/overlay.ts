@@ -38,7 +38,16 @@ function ensureOverlayElement(doc: Document): HTMLDivElement {
           font-size: 28px;
           line-height: 1.5;
           font-weight: 700;
+          margin-bottom: 16px;
+        "
+      ></div>
+      <div
+        data-role="countdown"
+        style="
+          min-height: 24px;
           margin-bottom: 24px;
+          color: #6f6659;
+          font-size: 14px;
         "
       ></div>
       <button
@@ -70,6 +79,7 @@ export class ReminderOverlay {
   private readonly element: HTMLDivElement;
   private readonly panelElement: HTMLDivElement;
   private readonly messageElement: HTMLDivElement;
+  private readonly countdownElement: HTMLDivElement;
   private readonly dismissButton: HTMLButtonElement;
   private dismissPromise: Promise<void> | null = null;
   private resolveDismiss: (() => void) | null = null;
@@ -77,17 +87,20 @@ export class ReminderOverlay {
   private activePresentation: ReminderOverlayPresentation | null = null;
   private previousHtmlOverflow = '';
   private previousBodyOverflow = '';
+  private countdownIntervalId: number | null = null;
 
   constructor(doc: Document) {
     this.doc = doc;
     this.element = ensureOverlayElement(doc);
     const panelElement = this.element.firstElementChild;
     const messageElement = this.element.querySelector('[data-role="message"]');
+    const countdownElement = this.element.querySelector('[data-role="countdown"]');
     const dismissButton = this.element.querySelector('[data-role="dismiss"]');
 
     if (
       !(panelElement instanceof HTMLDivElement) ||
       !(messageElement instanceof HTMLDivElement) ||
+      !(countdownElement instanceof HTMLDivElement) ||
       !(dismissButton instanceof HTMLButtonElement)
     ) {
       throw new Error('Reminder overlay structure is incomplete.');
@@ -95,10 +108,67 @@ export class ReminderOverlay {
 
     this.panelElement = panelElement;
     this.messageElement = messageElement;
+    this.countdownElement = countdownElement;
     this.dismissButton = dismissButton;
     this.dismissButton.addEventListener('click', () => {
+      if (this.dismissButton.disabled) {
+        return;
+      }
       this.hide();
     });
+  }
+
+  private clearCountdown(): void {
+    if (this.countdownIntervalId !== null) {
+      window.clearInterval(this.countdownIntervalId);
+      this.countdownIntervalId = null;
+    }
+  }
+
+  private setDismissButtonEnabled(enabled: boolean): void {
+    this.dismissButton.disabled = !enabled;
+    this.dismissButton.style.opacity = enabled ? '1' : '0.56';
+    this.dismissButton.style.cursor = enabled ? 'pointer' : 'not-allowed';
+
+    if (enabled) {
+      this.dismissButton.textContent = DISMISS_BUTTON_LABEL;
+      this.dismissButton.focus();
+    }
+  }
+
+  private applyCountdown(countdownSeconds?: number): void {
+    this.clearCountdown();
+
+    if (!countdownSeconds || countdownSeconds <= 0) {
+      this.countdownElement.textContent = '';
+      this.countdownElement.style.display = 'none';
+      this.setDismissButtonEnabled(true);
+      return;
+    }
+
+    let remainingSeconds = Math.ceil(countdownSeconds);
+
+    const updateCountdownUi = () => {
+      this.countdownElement.style.display = 'block';
+      this.countdownElement.textContent = `请先看远处 ${remainingSeconds} 秒`;
+      this.dismissButton.textContent = `${remainingSeconds} 秒后可关闭`;
+    };
+
+    this.setDismissButtonEnabled(false);
+    updateCountdownUi();
+
+    this.countdownIntervalId = window.setInterval(() => {
+      remainingSeconds -= 1;
+
+      if (remainingSeconds <= 0) {
+        this.clearCountdown();
+        this.countdownElement.textContent = '倒计时结束，可以关闭提醒。';
+        this.setDismissButtonEnabled(true);
+        return;
+      }
+
+      updateCountdownUi();
+    }, 1_000);
   }
 
   private applyPresentation(presentation: ReminderOverlayPresentation): void {
@@ -131,12 +201,14 @@ export class ReminderOverlay {
   show(
     message: string,
     mode: ReminderOverlayMode = 'reminder',
-    presentation: ReminderOverlayPresentation = 'fullscreen'
+    presentation: ReminderOverlayPresentation = 'fullscreen',
+    countdownSeconds?: number
   ): Promise<void> {
     this.activeMode = mode;
     this.activePresentation = presentation;
     this.messageElement.textContent = message;
     this.applyPresentation(presentation);
+    this.applyCountdown(countdownSeconds);
 
     if (presentation === 'fullscreen') {
       this.previousHtmlOverflow = this.doc.documentElement.style.overflow;
@@ -144,8 +216,6 @@ export class ReminderOverlay {
       this.doc.documentElement.style.overflow = 'hidden';
       this.doc.body.style.overflow = 'hidden';
     }
-
-    this.dismissButton.focus();
 
     if (!this.dismissPromise) {
       this.dismissPromise = new Promise<void>((resolve) => {
@@ -159,9 +229,13 @@ export class ReminderOverlay {
   hide(): void {
     this.activeMode = null;
     this.activePresentation = null;
+    this.clearCountdown();
     this.element.style.display = 'none';
     this.doc.documentElement.style.overflow = this.previousHtmlOverflow;
     this.doc.body.style.overflow = this.previousBodyOverflow;
+    this.countdownElement.textContent = '';
+    this.countdownElement.style.display = 'none';
+    this.setDismissButtonEnabled(true);
 
     const resolve = this.resolveDismiss;
     this.dismissPromise = null;

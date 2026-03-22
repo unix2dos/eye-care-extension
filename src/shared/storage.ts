@@ -1,6 +1,6 @@
 import { DEFAULT_REMINDER_SETTINGS } from './constants';
 import { createEmptyStatsState, normalizeStatsState, trimOldDays } from './stats';
-import type { PersistedState, ReminderSettings, StatsState, StorageAreaLike } from './types';
+import type { PersistedState, ReminderMode, ReminderSettings, StatsState, StorageAreaLike } from './types';
 
 export const STORAGE_KEY = 'weread-eye-care-state';
 
@@ -12,6 +12,21 @@ function getDefaultState(): PersistedState {
     nextEligibleReminderAt: null,
     settings: DEFAULT_REMINDER_SETTINGS
   };
+}
+
+function normalizeReminderMode(raw: Partial<ReminderSettings>): ReminderMode {
+  if (raw.reminderMode === 'standard' || raw.reminderMode === 'twenty-twenty-twenty') {
+    return raw.reminderMode;
+  }
+
+  const containsLegacySettingsFields =
+    raw.reminderIntervalMinutes !== undefined || raw.audioEnabled !== undefined || raw.fullscreenReminder !== undefined;
+
+  if (containsLegacySettingsFields) {
+    return 'standard';
+  }
+
+  return DEFAULT_REMINDER_SETTINGS.reminderMode;
 }
 
 function normalizeSettings(stored: unknown): ReminderSettings {
@@ -26,6 +41,7 @@ function normalizeSettings(stored: unknown): ReminderSettings {
       : DEFAULT_REMINDER_SETTINGS.reminderIntervalMinutes;
 
   return {
+    reminderMode: normalizeReminderMode(raw),
     reminderIntervalMinutes,
     audioEnabled:
       typeof raw.audioEnabled === 'boolean' ? raw.audioEnabled : DEFAULT_REMINDER_SETTINGS.audioEnabled,

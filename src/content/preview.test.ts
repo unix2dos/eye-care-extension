@@ -27,7 +27,7 @@ describe('createPreviewReminderRunner', () => {
 
     await Promise.resolve();
 
-    expect(overlay.show).toHaveBeenCalledWith(PREVIEW_REMINDER_MESSAGE, 'preview', 'fullscreen');
+    expect(overlay.show).toHaveBeenCalledWith(PREVIEW_REMINDER_MESSAGE, 'preview', 'fullscreen', undefined);
     expect(playReminder).toHaveBeenCalledTimes(1);
     expect(completed).toBe(false);
 
@@ -38,7 +38,7 @@ describe('createPreviewReminderRunner', () => {
     expect(completed).toBe(true);
   });
 
-  it('uses the configured compact presentation for preview reminders', async () => {
+  it('uses the configured reminder copy and countdown for preview reminders', async () => {
     let resolveDismiss: (() => void) | null = null;
     const overlay = {
       show: vi.fn(
@@ -53,13 +53,15 @@ describe('createPreviewReminderRunner', () => {
     const previewReminder = createPreviewReminderRunner({
       overlay,
       playReminder,
-      getPresentation: () => 'compact'
+      getPresentation: () => 'compact',
+      getMessage: () => '请看向远处 20 秒',
+      getCountdownSeconds: () => 20
     });
 
     const pending = previewReminder();
     await Promise.resolve();
 
-    expect(overlay.show).toHaveBeenCalledWith(PREVIEW_REMINDER_MESSAGE, 'preview', 'compact');
+    expect(overlay.show).toHaveBeenCalledWith('请看向远处 20 秒', 'preview', 'compact', 20);
 
     const dismiss = resolveDismiss as unknown as () => void;
     dismiss();

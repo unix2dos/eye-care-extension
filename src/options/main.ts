@@ -1,6 +1,7 @@
 import { AppStorage } from '../shared/storage';
 import { REMINDER_INTERVAL_OPTIONS } from '../shared/constants';
 import { exportBookStatsCsv } from '../shared/csv';
+import { getEffectiveReminderIntervalMinutes, getReminderCountdownSeconds } from '../shared/reminder-mode';
 import { resolveOptionsRuntimeStatus } from '../shared/runtime-status';
 import type { ReminderSettings } from '../shared/types';
 import { buildExportFilename, downloadCsv } from './export';
@@ -8,6 +9,11 @@ import { buildEnabledSitesMarkup, loadEnabledSites, removeEnabledSite } from './
 import { buildOptionsViewModel } from './view-model';
 
 let runtimeStatusIntervalId: number | null = null;
+
+const REMINDER_MODE_LABELS: Record<ReminderSettings['reminderMode'], string> = {
+  'twenty-twenty-twenty': '20-20-20 法则',
+  standard: '标准提醒'
+};
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -17,6 +23,30 @@ function parseReminderIntervalMinutes(value: string): ReminderSettings['reminder
   const minutes = Number(value);
 
   return minutes === 15 || minutes === 20 || minutes === 30 ? minutes : 20;
+}
+
+function parseReminderMode(value: string): ReminderSettings['reminderMode'] {
+  return value === 'standard' ? 'standard' : 'twenty-twenty-twenty';
+}
+
+function buildReminderModeDescription(settings: ReminderSettings): string {
+  if (settings.reminderMode === 'twenty-twenty-twenty') {
+    return '固定每 20 分钟提醒一次，并要求看向 20 英尺外至少 20 秒。';
+  }
+
+  return '标准提醒只要求手动关闭弹窗，支持 15 / 20 / 30 分钟间隔。';
+}
+
+function buildReminderSummary(settings: ReminderSettings): string {
+  const intervalMinutes = getEffectiveReminderIntervalMinutes(settings);
+  const audioSummary = settings.audioEnabled ? '并播放固定语音' : '';
+  const countdownSeconds = getReminderCountdownSeconds(settings);
+
+  if (countdownSeconds) {
+    return `当你在已启用站点持续活跃用眼累计 ${intervalMinutes} 分钟时，扩展会弹出 20-20-20 提醒：看向 20 英尺外至少 ${countdownSeconds} 秒${audioSummary}。`;
+  }
+
+  return `当你在已启用站点持续活跃用眼累计 ${intervalMinutes} 分钟时，扩展会弹出提醒${audioSummary}。`;
 }
 
 async function render(settingsStatusMessage = '修改后会立即保存并同步到已启用站点。'): Promise<void> {
@@ -30,6 +60,7 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
   const runtimeStatus = await resolveOptionsRuntimeStatus(state);
   const enabledSites = await loadEnabledSites();
   const viewModel = buildOptionsViewModel(state, runtimeStatus, today());
+  const usesFixedInterval = getReminderCountdownSeconds(state.settings) !== null;
   const app = document.getElementById('app');
 
   if (!app) {
@@ -58,14 +89,26 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
       <section class="settings">
         <h2>提醒设置</h2>
         <label class="setting">
+          <span>提醒模式</span>
+          <select id="reminder-mode">
+            ${Object.entries(REMINDER_MODE_LABELS)
+              .map(([mode, label]) => {
+                const selected = state.settings.reminderMode === mode ? 'selected' : '';
+                return `<option value="${mode}" ${selected}>${label}</option>`;
+              })
+              .join('')}
+          </select>
+        </label>
+        <label class="setting">
           <span>提醒间隔</span>
-          <select id="reminder-interval">
+          <select id="reminder-interval" ${usesFixedInterval ? 'disabled' : ''}>
             ${REMINDER_INTERVAL_OPTIONS.map((minutes) => {
               const selected = state.settings.reminderIntervalMinutes === minutes ? 'selected' : '';
               return `<option value="${minutes}" ${selected}>${minutes} 分钟</option>`;
             }).join('')}
           </select>
         </label>
+        <p class="setting-note">${buildReminderModeDescription(state.settings)}</p>
         <label class="setting checkbox">
           <input id="audio-enabled" type="checkbox" ${state.settings.audioEnabled ? 'checked' : ''} />
           <span>播放提醒语音</span>
@@ -87,12 +130,15 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
         <button id="export">导出 CSV</button>
         <button id="reset" class="secondary">清空本地统计</button>
       </div>
-      <p>当你在已启用站点持续活跃用眼累计 ${state.settings.reminderIntervalMinutes} 分钟时，扩展会弹出提醒${state.settings.audioEnabled ? '并播放固定语音' : ''}。</p>
+      <p>${buildReminderSummary(state.settings)}</p>
       <p>导出文件包含当前版本实际保存的数据：日期、域名、书名（如有）、阅读分钟数、提醒次数。</p>
     </section>
   `;
 
   const readSettings = (): ReminderSettings => ({
+    reminderMode: parseReminderMode(
+      (document.getElementById('reminder-mode') as HTMLSelectElement | null)?.value ?? state.settings.reminderMode
+    ),
     reminderIntervalMinutes: parseReminderIntervalMinutes(
       (document.getElementById('reminder-interval') as HTMLSelectElement | null)?.value ?? String(state.settings.reminderIntervalMinutes)
     ),
@@ -136,6 +182,10 @@ async function render(settingsStatusMessage = '修改后会立即保存并同步
   };
 
   document.getElementById('reminder-interval')?.addEventListener('change', () => {
+    void persistSettings();
+  });
+
+  document.getElementById('reminder-mode')?.addEventListener('change', () => {
     void persistSettings();
   });
 

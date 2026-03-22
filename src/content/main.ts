@@ -1,5 +1,6 @@
 import { DEFAULT_POLICY, DEFAULT_REMINDER_SETTINGS } from '../shared/constants';
 import { TOOLBAR_ICON_STATE_COMMAND } from '../shared/messages';
+import { getEffectiveReminderIntervalMinutes, getReminderCountdownSeconds } from '../shared/reminder-mode';
 import { AppStorage, STORAGE_KEY } from '../shared/storage';
 import type { ReminderSettings } from '../shared/types';
 import { ActiveReadingSession } from './activity/session';
@@ -10,22 +11,29 @@ import {
   type ReminderAudioDebugInfo
 } from './reminder/audio';
 import { ReminderOverlay, type ReminderOverlayPresentation } from './reminder/overlay';
-import { DEFAULT_REMINDER_SPEECH } from './reminder/tts';
+import { DEFAULT_REMINDER_SPEECH, TWENTY_TWENTY_TWENTY_REMINDER_SPEECH } from './reminder/tts';
 import { ActiveReadingReminderScheduler } from './runtime/scheduler';
 import { getWeReadBookTitle, isSupportedWeReadUrl } from './weread/adapter';
 import { ReadingEngine } from './reading-engine';
 import { installMessageBridge } from './message-bridge';
 
 function getReminderIntervalMs(settings: ReminderSettings): number {
-  return settings.reminderIntervalMinutes * 60_000;
+  return getEffectiveReminderIntervalMinutes(settings) * 60_000;
 }
 
 function getReminderPresentation(settings: ReminderSettings): ReminderOverlayPresentation {
   return settings.fullscreenReminder ? 'fullscreen' : 'compact';
 }
 
+function getReminderSpeech(settings: ReminderSettings): string {
+  return settings.reminderMode === 'twenty-twenty-twenty'
+    ? TWENTY_TWENTY_TWENTY_REMINDER_SPEECH
+    : DEFAULT_REMINDER_SPEECH;
+}
+
 function areSettingsEqual(left: ReminderSettings, right: ReminderSettings): boolean {
   return (
+    left.reminderMode === right.reminderMode &&
     left.reminderIntervalMinutes === right.reminderIntervalMinutes &&
     left.audioEnabled === right.audioEnabled &&
     left.fullscreenReminder === right.fullscreenReminder
@@ -92,7 +100,8 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
       getBookTitle: () => (isWeReadPage ? getWeReadBookTitle(doc) : null),
       getReminderIntervalMs: () => getReminderIntervalMs(settings),
       getReminderPresentation: () => getReminderPresentation(settings),
-      getReminderSpeech: () => DEFAULT_REMINDER_SPEECH,
+      getReminderSpeech: () => getReminderSpeech(settings),
+      getReminderCountdownSeconds: () => getReminderCountdownSeconds(settings),
       isAudioEnabled: () => settings.audioEnabled,
       doc
     },
@@ -116,7 +125,9 @@ async function bootstrap(doc: Document, win: Window): Promise<void> {
   const previewReminder = createPreviewReminderRunner({
     overlay,
     playReminder,
-    getPresentation: () => getReminderPresentation(settings)
+    getPresentation: () => getReminderPresentation(settings),
+    getMessage: () => getReminderSpeech(settings),
+    getCountdownSeconds: () => getReminderCountdownSeconds(settings)
   });
 
   const markInteraction = () => {

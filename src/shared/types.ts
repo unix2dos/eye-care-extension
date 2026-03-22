@@ -3,7 +3,10 @@ export interface ReminderPolicyConfig {
   reminderIntervalMs: number;
 }
 
+export type ReminderMode = 'standard' | 'twenty-twenty-twenty';
+
 export interface ReminderSettings {
+  reminderMode: ReminderMode;
   reminderIntervalMinutes: 15 | 20 | 30;
   audioEnabled: boolean;
   fullscreenReminder: boolean;

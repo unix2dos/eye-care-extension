@@ -30,6 +30,7 @@ function createMockDeps(overrides: Partial<ReadingEngineDeps> = {}): ReadingEngi
     getReminderIntervalMs: () => 20 * 60_000,
     getReminderPresentation: () => 'fullscreen',
     getReminderSpeech: () => '请休息一下。',
+    getReminderCountdownSeconds: () => null,
     isAudioEnabled: () => true,
     doc: { visibilityState: 'visible' },
     ...overrides
@@ -80,7 +81,7 @@ describe('ReadingEngine', () => {
     session.markInteraction(60_000);
     await engine.tick(2 * 60_000);
 
-    expect(deps.overlay.show).toHaveBeenCalledWith('请休息一下。', 'reminder', 'fullscreen');
+    expect(deps.overlay.show).toHaveBeenCalledWith('请休息一下。', 'reminder', 'fullscreen', undefined);
     expect(deps.playReminder).toHaveBeenCalled();
   });
 
@@ -119,5 +120,30 @@ describe('ReadingEngine', () => {
     await engine.tick(1_000);
 
     expect(deps.storage.saveStats).not.toHaveBeenCalled();
+  });
+
+  it('passes the forced countdown to 20-20-20 reminders', async () => {
+    const deps = createMockDeps({
+      getReminderSpeech: () => '请看向远处 20 秒。',
+      getReminderCountdownSeconds: () => 20
+    });
+    const session = deps.session as ActiveReadingSession;
+
+    session.markInteraction(0);
+    const engine = new ReadingEngine(deps, {
+      stats: createEmptyStatsState(),
+      activeReadingTimeMs: 19 * 60_000,
+      isActiveReading: true,
+      nextEligibleReminderAt: 20 * 60_000
+    });
+
+    const scheduler = new ActiveReadingReminderScheduler(20 * 60_000, 19 * 60_000);
+    (deps as { scheduler: ActiveReadingReminderScheduler }).scheduler = scheduler;
+    scheduler.update(0, true);
+
+    session.markInteraction(60_000);
+    await engine.tick(2 * 60_000);
+
+    expect(deps.overlay.show).toHaveBeenCalledWith('请看向远处 20 秒。', 'reminder', 'fullscreen', 20);
   });
 });

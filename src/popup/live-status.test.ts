@@ -12,6 +12,7 @@ describe('derivePopupRuntimeState', () => {
       isActiveReading: true,
       nextEligibleReminderAt: 10_000,
       settings: {
+        reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
         audioEnabled: true,
         fullscreenReminder: true
@@ -32,6 +33,7 @@ describe('derivePopupRuntimeState', () => {
       isActiveReading: false,
       nextEligibleReminderAt: null,
       settings: {
+        reminderMode: 'twenty-twenty-twenty',
         reminderIntervalMinutes: 20,
         audioEnabled: true,
         fullscreenReminder: true
