@@ -37,7 +37,7 @@ The repository keeps the final PNG screenshots. The intermediate HTML fixtures a
 
 ### Store Name
 
-微信读书护眼
+护眼提醒扩展
 
 ### Short Description
 
@@ -78,7 +78,7 @@ The repository keeps the final PNG screenshots. The intermediate HTML fixtures a
 
 ### Privacy Disclosure
 
-微信读书护眼的设计原则是“本地优先、最小权限、只做提醒”。
+护眼提醒扩展的设计原则是“本地优先、最小权限、只做提醒”。
 
 它只请求并使用以下权限：
 
@@ -127,7 +127,7 @@ The repository keeps the final PNG screenshots. The intermediate HTML fixtures a
 
 ### Store Name
 
-WeRead Eye Care
+Eye Care Reminder
 
 ### Short Description
 
@@ -163,7 +163,7 @@ Best for:
 
 ### Privacy Disclosure
 
-WeRead Eye Care is designed around three principles: local-first, minimal permissions, and reminder-only behavior.
+Eye Care Reminder is designed around three principles: local-first, minimal permissions, and reminder-only behavior.
 
 The extension only uses these permissions:
 

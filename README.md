@@ -1,4 +1,4 @@
-<!-- # WeRead Eye Care -->
+<!-- # Eye Care Reminder -->
 
 一个支持 `微信读书默认启用 + 其他站点按需启用` 的 Chrome 护眼提醒扩展。
 
