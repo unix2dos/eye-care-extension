@@ -1,4 +1,4 @@
-import { mkdir, cp, rm } from 'node:fs/promises';
+import { mkdir, cp, rm, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import esbuild from 'esbuild';
@@ -36,3 +36,14 @@ await esbuild.build({
   target: 'es2022',
   sourcemap: true
 });
+
+// Strip remote URL from jspdf's unused `pdfobjectnewwindow` output mode.
+// Chrome MV3 review rejects bundles containing remote script URLs even in dead branches.
+const REMOTE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js';
+const optionsBundle = path.join(distDir, 'options', 'main.js');
+const original = await readFile(optionsBundle, 'utf8');
+const stripped = original.replaceAll(REMOTE_URL, '');
+if (original === stripped) {
+  throw new Error(`build: expected to strip remote URL from ${optionsBundle} but no occurrence was found`);
+}
+await writeFile(optionsBundle, stripped);
