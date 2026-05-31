@@ -4,16 +4,16 @@
 
 ## 1. 先定版本号
 
-当前工作区版本号已经设置为 `2.0.0`：
+当前工作区版本号已经设置为 `2.0.1`：
 
 - [package.json](/Users/liuwei/workspace/eye-care-extension/package.json)
 - [public/manifest.json](/Users/liuwei/workspace/eye-care-extension/public/manifest.json)
 
 如果发布前还要继续改代码，记得在最终构建前确认这两个文件仍然保持一致。
 
-为什么是 `2.0.0`：
+为什么是 `2.0.1`：
 
-- 从“微信读书专用提醒”演进成了“微信读书默认支持 + 普通网页按站点启用”
+- 从“微信读书专用提醒”演进成了“微信读书阅读页默认支持 + 普通网页按站点启用”
 - 新增了 `20-20-20`、休息引导、健康报告、PDF 导出、数据管理、免费版/专业版能力边界
 - 商店文案、权限说明和用户心智都已经是一次明显升级
 
@@ -53,7 +53,7 @@ git diff --check
 
 当前真实产品边界：
 
-- 微信读书默认支持
+- 微信读书阅读页默认支持
 - 其他网页需要按站点授权
 - 真实支付还没接入
 - `专业版预览` 只是本地 feature preview，不是正式订阅
@@ -78,7 +78,7 @@ git diff --check
 
 建议重拍的截图重点：
 
-1. popup：展示“微信读书默认支持 / 普通网页按需启用”的状态
+1. popup：展示“微信读书阅读页默认支持 / 普通网页按需启用”的状态
 2. options：展示新的首屏层级
    - 提醒设置
    - 用眼健康报告
@@ -115,10 +115,10 @@ npm run build
 
 2. 打开 `dist/` 确认输出完整
 3. 优先使用当前已经准备好的上传包：
-   - [release/eye-care-reminder-2.0.0-store.zip](/Users/liuwei/workspace/eye-care-extension/release/eye-care-reminder-2.0.0-store.zip)
+   - [release/eye-care-reminder-2.0.1-store.zip](/Users/liuwei/workspace/eye-care-extension/release/eye-care-reminder-2.0.1-store.zip)
    - 说明：不包含 `*.map`，更适合商店上传
-   - SHA-256：`e3e7ab5df3322587c9d89b21e9c42d08b72a67aad5aa505c192af216b4280307`
-4. 如需保留 sourcemap 的完整归档包，可用：
+   - SHA-256：`39a4815a0e01f2d42b540af4e4b3bebb84e7e7e682f4373b6fed05efc81f4df5`
+4. 当前没有 `2.0.1` sourcemap 归档包；旧包仅用于历史回溯，不用于本次发布：
    - [release/eye-care-reminder-2.0.0-chrome.zip](/Users/liuwei/workspace/eye-care-extension/release/eye-care-reminder-2.0.0-chrome.zip)
    - SHA-256：`917bf97d8a21ddd992afd7a43f5224e5253dc470c6ba8f6687b73ba22390205d`
 5. 在 Chrome Web Store 后台更新：

@@ -6,13 +6,15 @@
 
 优先上传：
 
-- [eye-care-reminder-2.0.0-store.zip](/Users/liuwei/workspace/eye-care-extension/release/eye-care-reminder-2.0.0-store.zip)
-- SHA-256：`e3e7ab5df3322587c9d89b21e9c42d08b72a67aad5aa505c192af216b4280307`
+- [eye-care-reminder-2.0.1-store.zip](/Users/liuwei/workspace/eye-care-extension/release/eye-care-reminder-2.0.1-store.zip)
+- SHA-256：`39a4815a0e01f2d42b540af4e4b3bebb84e7e7e682f4373b6fed05efc81f4df5`
 
-归档备用：
+旧版归档（仅回溯，不用于本次提交）：
 
 - [eye-care-reminder-2.0.0-chrome.zip](/Users/liuwei/workspace/eye-care-extension/release/eye-care-reminder-2.0.0-chrome.zip)
 - SHA-256：`917bf97d8a21ddd992afd7a43f5224e5253dc470c6ba8f6687b73ba22390205d`
+- [eye-care-reminder-2.0.0-store.zip](/Users/liuwei/workspace/eye-care-extension/release/eye-care-reminder-2.0.0-store.zip)
+- SHA-256：`e3e7ab5df3322587c9d89b21e9c42d08b72a67aad5aa505c192af216b4280307`
 
 校验文件：
 
@@ -75,7 +77,7 @@
 
 1. 打开 Chrome Web Store 开发者后台
 2. 选择当前扩展条目
-3. 上传 [eye-care-reminder-2.0.0-store.zip](/Users/liuwei/workspace/eye-care-extension/release/eye-care-reminder-2.0.0-store.zip)
+3. 上传 [eye-care-reminder-2.0.1-store.zip](/Users/liuwei/workspace/eye-care-extension/release/eye-care-reminder-2.0.1-store.zip)
 4. 更新中文默认店铺名、短描述、长描述
 5. 更新英文本地化的店铺名、短描述、长描述
 6. 上传中文 4 张截图

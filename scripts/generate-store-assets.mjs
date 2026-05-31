@@ -17,8 +17,8 @@ const locales = {
     screenshotPrefix: 'zh',
     brand: '护眼提醒扩展',
     eyebrow: '本地优先护眼提醒',
-    popupTitle: '护眼提醒扩展',
-    popupSubtitle: '微信读书默认支持，普通网页按站点启用',
+    popupTitle: '护眼提醒',
+    popupSubtitle: '按活跃用眼时间提醒休息',
     popupMetrics: [
       ['今日阅读', '27 分钟'],
       ['今日提醒', '1 次'],
@@ -26,10 +26,12 @@ const locales = {
       ['下次提醒', '等待开始阅读']
     ],
     popupButtons: ['预览提醒', '提醒设置'],
-    popupSupportBadges: ['微信读书默认支持', '当前站点已启用'],
+    popupSupportBadges: ['微信读书阅读页默认支持', '当前 http/https 站点已启用'],
     popupStatusCopy: '只有页面可见、标签页在前台且仍有操作时，才继续累计活跃用眼时间。',
+    popupHealthTitle: '健康说明',
+    popupHealthCopy: '本扩展只提供日常休息提醒，不替代医生诊疗或处方方案。',
     optionsTitle: '护眼提醒扩展',
-    optionsIntro: '按活跃用眼时间提醒休息，统计和报告只保存在当前浏览器本地。',
+    optionsIntro: '扩展只按你的活跃用眼时长提醒。',
     optionsMetrics: [
       ['今日阅读', '27 分钟'],
       ['今日提醒', '1 次'],
@@ -38,8 +40,8 @@ const locales = {
     ],
     settingsTitle: '提醒设置',
     settingsRows: [
-      ['提醒模式', '20-20-20'],
-      ['标准提醒', '20 分钟'],
+      ['提醒模式', '20-20-20 法则'],
+      ['提醒间隔', '固定 20 分钟'],
       ['播放提醒语音', '已开启'],
       ['使用全屏提醒', '已开启']
     ],
@@ -47,9 +49,11 @@ const locales = {
     reportSummary: [
       ['总阅读', '27 分钟'],
       ['提醒次数', '1 次'],
-      ['合规情况', '暂无'],
-      ['范围', '最近 7 天']
+      ['休息合规率', '暂无'],
+      ['日均阅读', '14 分钟']
     ],
+    reportRangeLabel: '最近 7 天',
+    reportExportButton: '导出报告 PDF（专业版）',
     reportTrend: [
       ['03-21', '14 分钟', 0.72],
       ['03-22', '13 分钟', 0.66]
@@ -61,16 +65,20 @@ const locales = {
     ],
     enabledSitesTitle: '已启用站点',
     enabledSites: ['weread.qq.com', 'sspai.com'],
+    healthNoticeTitle: '健康与隐私说明',
+    healthNoticeCopy: '只做日常提醒；不请求摄像头、麦克风，也不会上传阅读数据。',
+    planPreviewTitle: '版本预览',
+    planPreviewCopy: '本地验证免费版 / 专业版功能锁态，真实支付尚未上线。',
     dataTitle: '数据管理',
-    dataDescription: 'PDF 适合打印或分享；CSV 适合备份和自行分析原始统计数据。',
-    dataButtons: ['导出报告 PDF', '导出原始数据 CSV', '清空本地数据'],
+    dataDescription: 'CSV 适合备份和自行分析原始统计数据。',
+    dataButtons: ['导出原始数据 CSV', '清空本地数据'],
     reminderBookTitle: '护眼休息时间到了',
     reminderBody: '当前按 20-20-20 模式提醒：看向远处并跟着步骤放松 20 秒。',
-    reminderMessage: '请看向 20 英尺外，至少 20 秒',
-    reminderCountdown: '剩余 12 秒',
-    reminderSteps: ['远眺屏幕外远处', '左右缓慢转动视线', '上下轻轻转动视线', '闭眼深呼吸一次'],
-    reminderHint: '倒计时结束后才能关闭提醒',
-    reminderButton: '等待倒计时结束',
+    reminderMessage: '请休息一下，看向 20 英尺外至少 20 秒，顺便多眨眼几次。',
+    reminderCountdown: '请先看远处 12 秒',
+    reminderSteps: ['先看远处', '左右转动视线', '上下转动视线', '闭眼深呼吸'],
+    reminderHint: '倒计时结束后，可以关闭提醒。',
+    reminderButton: '12 秒后可关闭',
     toolbarLabels: {
       active: '读',
       paused: '停',
@@ -83,7 +91,7 @@ const locales = {
     screens: {
       popup: {
         badge: '弹窗总览',
-        title: '默认支持微信读书，也能按站点扩展到普通网页',
+        title: '默认支持微信读书阅读页，也能按站点扩展到普通网页',
         subtitle: '今日阅读、状态解释和下次提醒都集中在一个轻量面板里。',
         bullets: ['当前站点一键启用', '支持提醒预览', '暂停原因直接可见']
       },
@@ -113,7 +121,7 @@ const locales = {
     brand: 'Eye Care Reminder',
     eyebrow: 'Local-first eye care reminder',
     popupTitle: 'Eye Care Reminder',
-    popupSubtitle: 'WeRead by default, other sites one by one',
+    popupSubtitle: 'Breaks based on active reading time',
     popupMetrics: [
       ['Today Reading', '27 min'],
       ['Today Breaks', '1'],
@@ -121,11 +129,13 @@ const locales = {
       ['Next Break', 'Waiting for reading']
     ],
     popupButtons: ['Preview', 'Settings'],
-    popupSupportBadges: ['WeRead enabled by default', 'Current site enabled'],
+    popupSupportBadges: ['WeRead reader pages by default', 'Current http/https site enabled'],
     popupStatusCopy:
       'The timer only moves while the page is visible, the tab is in front, and reading activity is still happening.',
+    popupHealthTitle: 'Health Notice',
+    popupHealthCopy: 'This extension is a daily break reminder, not medical diagnosis or treatment advice.',
     optionsTitle: 'Eye Care Reminder',
-    optionsIntro: 'Breaks are based on active reading time, and all stats stay inside the current browser profile.',
+    optionsIntro: 'The extension reminds you based only on active eye-use time.',
     optionsMetrics: [
       ['Today Reading', '27 min'],
       ['Today Breaks', '1'],
@@ -134,8 +144,8 @@ const locales = {
     ],
     settingsTitle: 'Reminder Settings',
     settingsRows: [
-      ['Mode', '20-20-20'],
-      ['Standard', '20 min'],
+      ['Mode', '20-20-20 Rule'],
+      ['Interval', 'Fixed 20 min'],
       ['Voice Reminder', 'On'],
       ['Full-screen Reminder', 'On']
     ],
@@ -144,8 +154,10 @@ const locales = {
       ['Reading', '27 min'],
       ['Breaks', '1'],
       ['Compliance', 'N/A'],
-      ['Range', 'Last 7 days']
+      ['Daily Avg', '14 min']
     ],
+    reportRangeLabel: 'Last 7 days',
+    reportExportButton: 'Export PDF (Pro)',
     reportTrend: [
       ['03-21', '14 min', 0.72],
       ['03-22', '13 min', 0.66]
@@ -157,21 +169,25 @@ const locales = {
     ],
     enabledSitesTitle: 'Enabled Sites',
     enabledSites: ['weread.qq.com', 'sspai.com'],
+    healthNoticeTitle: 'Health & Privacy',
+    healthNoticeCopy: 'Daily break reminders only; no camera, no microphone, and no reading-data upload.',
+    planPreviewTitle: 'Plan Preview',
+    planPreviewCopy: 'Local free/pro feature gating preview; live billing is not enabled yet.',
     dataTitle: 'Data Management',
-    dataDescription: 'PDF is for reading or sharing; CSV is for backup and raw self-analysis.',
-    dataButtons: ['Export Report PDF', 'Export Raw Data CSV', 'Reset Local Data'],
+    dataDescription: 'CSV is for backup and raw self-analysis.',
+    dataButtons: ['Export Raw Data CSV', 'Reset Local Data'],
     reminderBookTitle: 'Time for an eye break',
     reminderBody: 'The 20-20-20 mode is active: look into the distance and follow a short guided break.',
-    reminderMessage: 'Look 20 feet away for at least 20 seconds',
-    reminderCountdown: '12 seconds left',
+    reminderMessage: 'Take a break, look 20 feet away for at least 20 seconds, and blink a few times.',
+    reminderCountdown: 'Look away for 12 more seconds',
     reminderSteps: [
       'Look into the distance',
       'Move your eyes left and right',
       'Move your eyes up and down',
       'Close your eyes and breathe once'
     ],
-    reminderHint: 'The reminder can close after the countdown ends',
-    reminderButton: 'Wait for countdown',
+    reminderHint: 'The reminder can close when the countdown ends.',
+    reminderButton: 'Close in 12 sec',
     toolbarLabels: {
       active: 'READ',
       paused: 'PAUSE',
@@ -186,7 +202,7 @@ const locales = {
     screens: {
       popup: {
         badge: 'Popup Overview',
-        title: 'WeRead works immediately, and any normal page can be enabled site by site',
+        title: 'WeRead reader pages work immediately, and any normal page can be enabled site by site',
         subtitle: 'Reading time, status reasoning, and the next break all stay visible in one small panel.',
         bullets: ['One-click site enablement', 'Preview reminders', 'Why paused is explicit']
       },
@@ -304,9 +320,19 @@ const commonStyles = `
     padding: 24px;
   }
   .scaled-panel {
-    transform: scale(0.7);
+    transform: scale(0.58);
     transform-origin: top left;
-    width: calc(100% / 0.7);
+    width: calc(100% / 0.58);
+  }
+  .options-visual {
+    position: relative;
+    overflow: hidden;
+  }
+  .options-visual .scaled-panel {
+    position: absolute;
+    top: 22px;
+    left: 22px;
+    width: calc((100% - 44px) / 0.58);
   }
   .metrics {
     display: grid;
@@ -413,13 +439,13 @@ const commonStyles = `
   }
   .options-stack {
     display: grid;
-    gap: 12px;
+    gap: 10px;
     margin-top: 16px;
   }
   .section-card {
     border-radius: 22px;
     background: #fff8ee;
-    padding: 16px;
+    padding: 14px;
   }
   .section-head {
     display: flex;
@@ -860,6 +886,10 @@ function renderPopupVisual(localeConfig) {
             .join('')}
         </div>
         <div class="support-copy">${localeConfig.popupStatusCopy}</div>
+        <div class="section-card" style="margin-top: 16px;">
+          <div class="section-title" style="font-size: 20px; margin-bottom: 8px;">${localeConfig.popupHealthTitle}</div>
+          <div class="section-note" style="font-size: 16px;">${localeConfig.popupHealthCopy}</div>
+        </div>
         <div class="button-stack">
           <div class="button-pill">${localeConfig.popupButtons[0]}</div>
           <div class="button-pill secondary">${localeConfig.popupButtons[1]}</div>
@@ -871,7 +901,7 @@ function renderPopupVisual(localeConfig) {
 
 function renderOptionsVisual(localeConfig) {
   return `
-    <section class="visual-shell">
+    <section class="visual-shell options-visual">
       <div class="scaled-panel">
         <div class="panel-card">
           <div style="font-size: 34px; font-weight: 800; margin-bottom: 8px;">${localeConfig.optionsTitle}</div>
@@ -923,7 +953,10 @@ function renderOptionsVisual(localeConfig) {
             <div class="section-card">
               <div class="section-head">
                 <div class="section-title">${localeConfig.reportTitle}</div>
-                <div class="section-pill">${localeConfig.reportSummary[3][1]}</div>
+                <div class="section-pill">${localeConfig.reportRangeLabel}</div>
+              </div>
+              <div class="action-row" style="margin: 0 0 12px;">
+                <div class="button-pill ghost">${localeConfig.reportExportButton}</div>
               </div>
               <div class="report-summary">
                 ${localeConfig.reportSummary
@@ -976,15 +1009,30 @@ function renderOptionsVisual(localeConfig) {
                 </div>
               </div>
             </div>
+            <div class="options-columns">
+              <div class="section-card">
+                <div class="section-head">
+                  <div class="section-title">${localeConfig.healthNoticeTitle}</div>
+                </div>
+                <div class="section-note">${localeConfig.healthNoticeCopy}</div>
+              </div>
+              <div class="section-card">
+                <div class="section-head">
+                  <div class="section-title">${localeConfig.planPreviewTitle}</div>
+                  <div class="section-pill">${localeConfig.lang === 'zh-CN' ? '免费版' : 'Free'}</div>
+                </div>
+                <div class="section-note">${localeConfig.planPreviewCopy}</div>
+              </div>
+            </div>
             <div class="section-card">
               <div class="section-head">
                 <div class="section-title">${localeConfig.dataTitle}</div>
               </div>
               <div class="section-note">${localeConfig.dataDescription}</div>
               <div class="action-row">
-                <div class="button-pill">${localeConfig.dataButtons[0]}</div>
-                <div class="button-pill ghost">${localeConfig.dataButtons[1]}</div>
-                <div class="button-pill danger">${localeConfig.dataButtons[2]}</div>
+                ${localeConfig.dataButtons
+                  .map((button, index) => `<div class="button-pill ${index === 0 ? 'ghost' : 'danger'}">${button}</div>`)
+                  .join('')}
               </div>
             </div>
           </div>

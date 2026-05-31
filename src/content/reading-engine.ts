@@ -1,5 +1,5 @@
 import { recordReadingSample as recordSample, recordReminderTriggered as recordReminder } from '../shared/stats';
-import type { PersistedState, ReminderSettings, StatsState } from '../shared/types';
+import type { PersistedState, StatsState } from '../shared/types';
 import type { ActiveReadingSession } from './activity/session';
 import type { ReminderAudioDebugInfo } from './reminder/audio';
 import type { ReminderOverlayPresentation } from './reminder/overlay';
@@ -28,7 +28,7 @@ export interface ReadingEngineDeps {
   getBookTitle: () => string | null;
   getReminderIntervalMs: () => number;
   getReminderPresentation: () => ReminderOverlayPresentation;
-  getReminderSpeech: () => string;
+  getReminderMessage: () => string;
   getReminderCountdownSeconds: () => number | null;
   isAudioEnabled: () => boolean;
   doc: Pick<Document, 'visibilityState'>;
@@ -158,7 +158,7 @@ export class ReadingEngine {
 
   private async triggerReminder(): Promise<void> {
     const dismissed = this.deps.overlay.show(
-      this.deps.getReminderSpeech(),
+      this.deps.getReminderMessage(),
       'reminder',
       this.deps.getReminderPresentation(),
       this.deps.getReminderCountdownSeconds() ?? undefined

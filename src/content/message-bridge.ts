@@ -1,4 +1,4 @@
-import { REQUEST_RUNTIME_STATUS_COMMAND, TOOLBAR_ICON_STATE_COMMAND } from '../shared/messages';
+import { REQUEST_RUNTIME_STATUS_COMMAND } from '../shared/messages';
 import { STORAGE_KEY } from '../shared/storage';
 import type { ReminderSettings, RuntimeStatusSnapshot, SubscriptionPlan } from '../shared/types';
 import type { ReminderOverlayPresentation } from './reminder/overlay';
@@ -23,7 +23,6 @@ export interface MessageBridgeDeps {
     isBlockingReminderVisible(): boolean;
     show(message: string, mode: 'preview' | 'reminder', presentation: ReminderOverlayPresentation): Promise<void>;
   };
-  playReminder: () => Promise<unknown>;
   applyPersistedState: (settings: ReminderSettings, plan: SubscriptionPlan) => Promise<void>;
   previewReminder: () => Promise<void>;
   doc: Pick<Document, 'visibilityState'>;

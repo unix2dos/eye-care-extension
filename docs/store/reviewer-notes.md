@@ -7,7 +7,7 @@
 ```text
 审核说明：
 
-1. 扩展默认只在 https://weread.qq.com/* 工作。
+1. 扩展默认只在微信读书阅读页 https://weread.qq.com/web/reader/* 工作。
 2. 对其他网站，只有在 popup 中点击“在此站点启用护眼提醒”后，才会为当前站点申请权限并注入提醒脚本。
 3. 扩展不会申请 all_urls，不会在未授权站点运行，也不会上传任何阅读数据。
 4. Options 页面里的“专业版预览”只是本地功能锁态预览，用于验证动画引导、PDF 导出、30 天趋势和自定义间隔；它不是正式订阅，也不会处理支付信息。
@@ -25,7 +25,7 @@
 ```text
 Reviewer notes:
 
-1. The extension works on https://weread.qq.com/* by default.
+1. The extension works on WeRead reader pages, https://weread.qq.com/web/reader/*, by default.
 2. For other sites, it only requests host permission after the user clicks "Enable eye-care reminders on this site" in the popup for the current page.
 3. It does not request all_urls, does not run on unauthorized sites, and does not upload reading data anywhere.
 4. The "Pro preview" inside the Options page is a local feature-gating preview only. It is used to verify animation guidance, PDF export, 30-day reports, and custom intervals. It is not a live subscription flow and does not process payment information.

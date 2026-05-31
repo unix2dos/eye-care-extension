@@ -1,6 +1,6 @@
 <!-- # Eye Care Reminder -->
 
-一个支持 `微信读书默认启用 + 其他站点按需启用` 的 Chrome 护眼提醒扩展。
+一个支持 `微信读书阅读页默认启用 + 其他 http/https 站点按需启用` 的 Chrome 护眼提醒扩展。
 
 Eye Care Reminder is a Chrome extension that tracks active reading time, triggers local break reminders, and keeps all settings and stats inside the current browser profile.
 
@@ -12,12 +12,12 @@ Eye Care Reminder is a Chrome extension that tracks active reading time, trigger
 
 `Eye Care Reminder` 解决的是一个具体的问题：当你在浏览器里持续阅读或用眼时，如何在不引入摄像头、不依赖云服务的前提下，得到明确但克制的休息提醒。
 
-扩展在 `微信读书阅读页` 默认生效；在其他普通网页上，用户可以通过 popup 为当前站点单独授权启用。它根据“活跃阅读时间”而不是自然时钟来累计计时，并在到达提醒间隔后通过页面提醒和内置语音提示你暂停一下。默认模式是 `20-20-20` 法则，也保留了更轻量的标准提醒模式。
+扩展默认只在 `https://weread.qq.com/web/reader/*` 这类微信读书阅读页生效；在其他普通 `http/https` 网页上，用户可以通过 popup 为当前站点单独授权启用。它根据“活跃阅读时间”而不是自然时钟来累计计时，并在到达提醒间隔后通过页面提醒和内置语音提示你暂停一下。默认模式是 `20-20-20` 法则，也保留了更轻量的标准提醒模式。
 
 ## 核心能力
 
-- `微信读书默认支持 + 其他站点按需启用`
-  微信读书阅读页开箱即用，其他站点只在你明确授权后才会工作。
+- `微信读书阅读页默认支持 + 其他站点按需启用`
+  微信读书阅读页开箱即用，其他 `http/https` 站点只在你明确授权后才会工作。
 - `活跃阅读计时`
   只有页面可见、标签页在前台、且最近仍有阅读操作时才继续累计。
 - `明确的休息提醒`
@@ -45,7 +45,7 @@ Eye Care Reminder is a Chrome extension that tracks active reading time, trigger
 
 ![Popup overview](docs/store/images/zh/01-popup.png)
 
-弹窗集中展示今日阅读、当前状态解释和下一次提醒，并把“微信读书默认支持 + 普通网页按站点启用”的边界直接说清楚。
+弹窗集中展示今日阅读、当前状态解释和下一次提醒，并把“微信读书阅读页默认支持 + 普通网页按站点启用”的边界直接说清楚。
 
 ### 设置页
 
@@ -98,8 +98,8 @@ Eye Care Reminder is a Chrome extension that tracks active reading time, trigger
 - 不请求麦克风权限
 - 不上传阅读数据到远端服务
 - 不依赖云端语音服务
-- 默认只申请 `storage`、`scripting` 和 `https://weread.qq.com/*`
-- 对其他网站的权限通过 popup 按站点动态申请，不一次性请求 `<all_urls>`
+- 默认只申请 `storage`、`scripting` 和 `https://weread.qq.com/*`，内容脚本默认只匹配微信读书阅读页 `https://weread.qq.com/web/reader/*`
+- 对其他 `http/https` 网站的权限通过 popup 按站点动态申请，不一次性请求 `<all_urls>`
 
 隐私政策见 [PRIVACY.md](PRIVACY.md)。
 
@@ -161,7 +161,7 @@ npx tsc --noEmit
 
 ## 使用方式
 
-1. 打开微信读书阅读页，或打开任意普通网页后在 popup 中点击 `在此站点启用护眼提醒`
+1. 打开微信读书阅读页，或打开任意普通 `http/https` 网页后在 popup 中点击 `在此站点启用护眼提醒`
 2. 正常阅读，扩展会自动累计活跃阅读时间
 3. 到达提醒间隔后，页面会显示提醒遮罩，并按设置决定是否播放语音
 4. 点击扩展图标，可以查看当前阅读状态与下一次提醒倒计时
@@ -171,7 +171,7 @@ npx tsc --noEmit
 
 ## 当前范围
 
-- 微信读书阅读页默认支持，其他站点按域名单独启用
+- 微信读书阅读页默认支持，其他 `http/https` 站点按域名单独启用
 - 默认提醒模型基于活跃阅读累计时间
 - 默认模式为 `20-20-20`，同时保留标准提醒模式
 - 免费版默认开启；`Options` 页面提供本地专业版预览，但还没有真实支付接入

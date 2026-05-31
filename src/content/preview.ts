@@ -1,7 +1,7 @@
-import { DEFAULT_REMINDER_SPEECH } from './reminder/tts';
+import { DEFAULT_REMINDER_MESSAGE } from './reminder/copy';
 import type { ReminderOverlayPresentation } from './reminder/overlay';
 
-export const PREVIEW_REMINDER_MESSAGE = DEFAULT_REMINDER_SPEECH;
+export const PREVIEW_REMINDER_MESSAGE = DEFAULT_REMINDER_MESSAGE;
 
 export interface OverlayLike {
   show(

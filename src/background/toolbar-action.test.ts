@@ -1,7 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { applyToolbarActionVisuals } from './toolbar-action';
-import type { ToolbarIconState } from './icon';
 
 interface MockActionApi {
   setIcon: (details: { tabId?: number; imageData: Record<number, ImageData> }) => Promise<void>;

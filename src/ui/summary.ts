@@ -1,5 +1,5 @@
 import { DEFAULT_POLICY } from '../shared/constants';
-import type { DayStats, RuntimeStatusSnapshot, StatsState } from '../shared/types';
+import type { RuntimeStatusSnapshot, StatsState } from '../shared/types';
 
 export interface StatsSummary {
   todayReadingMinutes: number;
@@ -16,10 +16,6 @@ export interface ReminderStatusSummary {
 export interface RuntimeStatusDetail {
   label: string;
   value: string;
-}
-
-function getSortedDays(state: StatsState): DayStats[] {
-  return Object.values(state.days).sort((left, right) => left.date.localeCompare(right.date));
 }
 
 export function buildStatsSummary(state: StatsState, todayDate: string): StatsSummary {

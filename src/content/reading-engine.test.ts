@@ -29,7 +29,7 @@ function createMockDeps(overrides: Partial<ReadingEngineDeps> = {}): ReadingEngi
     getBookTitle: () => '测试书名',
     getReminderIntervalMs: () => 20 * 60_000,
     getReminderPresentation: () => 'fullscreen',
-    getReminderSpeech: () => '请休息一下。',
+    getReminderMessage: () => '请休息一下。',
     getReminderCountdownSeconds: () => null,
     isAudioEnabled: () => true,
     doc: { visibilityState: 'visible' },
@@ -124,7 +124,7 @@ describe('ReadingEngine', () => {
 
   it('passes the forced countdown to 20-20-20 reminders', async () => {
     const deps = createMockDeps({
-      getReminderSpeech: () => '请看向远处 20 秒。',
+      getReminderMessage: () => '请看向远处 20 秒。',
       getReminderCountdownSeconds: () => 20
     });
     const session = deps.session as ActiveReadingSession;

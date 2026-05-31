@@ -41,11 +41,11 @@ The repository keeps the final PNG screenshots. The intermediate HTML fixtures a
 
 ### Short Description
 
-微信读书默认支持，普通网页按站点启用。按活跃用眼时间提醒休息，支持 20-20-20、健康报告和本地导出。
+微信读书阅读页默认支持，普通网页按站点启用。按活跃用眼时间提醒休息，支持 20-20-20、健康报告和本地导出。
 
 ### Long Description
 
-护眼提醒扩展是一个本地优先的浏览器护眼助手。微信读书阅读页开箱即用，其他普通网页只有在你主动授权当前站点后才会工作。
+护眼提醒扩展是一个本地优先的浏览器护眼助手。微信读书阅读页（https://weread.qq.com/web/reader/*）开箱即用，其他普通 http/https 网页只有在你主动授权当前站点后才会工作。
 
 它不会索要摄像头权限，也不会分析你的面部状态。扩展只根据当前页面里的活跃用眼时间来判断什么时候提醒你休息，让提醒足够明确，但不过度打扰。
 
@@ -57,7 +57,7 @@ The repository keeps the final PNG screenshots. The intermediate HTML fixtures a
 
 主要功能：
 
-- 微信读书默认支持，普通网页按站点单独启用
+- 微信读书阅读页默认支持，普通网页按站点单独启用
 - 按活跃阅读时间提醒，而不是按自然时钟机械提醒
 - 默认支持 `20-20-20` 模式，也保留标准提醒
 - 免费版支持 `15 / 20 / 30` 分钟预设；专业版能力预览可自定义分钟数
@@ -84,7 +84,7 @@ The repository keeps the final PNG screenshots. The intermediate HTML fixtures a
 
 - `storage`：保存提醒设置、本地统计和本地版本预览状态
 - `scripting`：在用户已授权站点注入提醒脚本
-- `https://weread.qq.com/*`：微信读书默认支持
+- `https://weread.qq.com/*`：用于默认支持微信读书阅读页
 - 对其他 `http/https` 网站，只会在用户主动点击启用后为当前站点申请权限
 
 它不会做这些事：
@@ -111,7 +111,7 @@ The repository keeps the final PNG screenshots. The intermediate HTML fixtures a
 ### Screenshot Captions
 
 1. Popup 总览
-   - 标题：默认支持微信读书，也能按站点扩展到普通网页
+   - 标题：默认支持微信读书阅读页，也能按站点扩展到普通网页
    - 说明：今日阅读、状态解释和下次提醒都集中在一个轻量面板里。
 2. 设置页
    - 标题：把设置、报告和数据管理分成清晰层级
@@ -131,11 +131,11 @@ Eye Care Reminder
 
 ### Short Description
 
-WeRead is supported by default, and other sites can be enabled one by one. Tracks active reading time, supports 20-20-20, and keeps reports local.
+WeRead reader pages work by default, and other sites can be enabled one by one. Tracks active reading time, supports 20-20-20, and keeps reports local.
 
 ### Long Description
 
-Eye Care Reminder is a local-first break reminder for long reading and screen sessions. WeRead reading pages work out of the box, and other sites can be enabled only after the user grants permission for that site.
+Eye Care Reminder is a local-first break reminder for long reading and screen sessions. WeRead reader pages (`https://weread.qq.com/web/reader/*`) work out of the box, and other normal http/https sites can be enabled only after the user grants permission for that site.
 
 It does not ask for camera access and it does not analyze your face. The extension uses active reading time inside the current page to decide when to remind you to pause, keeping the experience clear and lightweight.
 
@@ -145,7 +145,7 @@ The default mode follows the 20-20-20 rule: after every 20 minutes of active rea
 
 Key features:
 
-- WeRead support by default, plus site-by-site enablement for other pages
+- WeRead reader pages by default, plus site-by-site enablement for other pages
 - Uses active reading time instead of a rigid wall clock timer
 - Built-in 20-20-20 mode and a lighter standard reminder mode
 - Bundled local voice reminder instead of system TTS
@@ -169,7 +169,7 @@ The extension only uses these permissions:
 
 - `storage`: save reminder preferences, local reading stats, and the local free/pro preview state
 - `scripting`: inject reminder logic into sites that the user has already enabled
-- `https://weread.qq.com/*`: built-in WeRead support
+- `https://weread.qq.com/*`: built-in support for WeRead reader pages
 - optional `http/https` host permissions: requested only for the current site after the user clicks enable
 
 What the extension does not do:
@@ -196,7 +196,7 @@ Health notice: this extension is a daily break-reminder tool only and does not r
 ### Screenshot Captions
 
 1. Popup Overview
-   - Title: WeRead works immediately, and any normal page can be enabled site by site
+   - Title: WeRead reader pages work immediately, and any normal page can be enabled site by site
    - Copy: Reading time, status reasoning, and the next break all stay visible in one small panel.
 2. Settings
    - Title: Settings, reports, and data actions now live in a clearer hierarchy
